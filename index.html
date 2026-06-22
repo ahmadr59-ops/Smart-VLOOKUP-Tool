@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart VLOOKUP Tool</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SheetJS (for Excel & CSV) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- SortableJS (for Drag & Drop) -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f1f5f9; }
+        .file-input-label:hover { background-color: #f8fafc; border-color: #3b82f6; }
+        .font-dancing-script { font-family: 'Dancing Script', cursive; }
+        .step-badge { background-color: #1e3a8a; color: white; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
+        .column-item { padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.875rem; position: relative; }
+        .column-item:hover { background-color: #eff6ff; border-color: #93c5fd; }
+        .column-item.selected { background-color: #3b82f6; color: white; border-color: #1d4ed8; font-weight: 600; }
+        .mapping-tag { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500;}
+        .remove-tag-btn { cursor: pointer; }
+        .remove-tag-btn:hover { color: #ef4444; }
+        .delete-col-btn { 
+            position: absolute; 
+            top: -8px; 
+            right: -8px; 
+            background-color: #fee2e2; 
+            color: #ef4444; 
+            border-radius: 9999px; 
+            width: 1.5rem; 
+            height: 1.5rem; 
+            display: none;
+            align-items: center; 
+            justify-content: center;
+            font-size: 1rem;
+            line-height: 1;
+            border: 1px solid #fca5a5;
+            z-index: 10;
+            cursor: pointer;
+        }
+        .column-item:hover .delete-col-btn { display: inline-flex; }
+        .delete-col-btn:hover { background-color: #fecaca; }
+        .draggable-item { padding: 0.75rem 0.5rem; background-color: white; border: 1px solid #d1d5db; border-left-width: 0; cursor: grab; user-select: none; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; height: 180px; width: auto; min-width: 50px; }
+        #column-arranger .draggable-item:first-child { border-left-width: 1px; border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem; }
+        #column-arranger .draggable-item:last-child { border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; }
+        .draggable-item .handle { cursor: grab; color: #9ca3af; width: 100%; text-align: center; padding-bottom: 8px; }
+        .draggable-item span { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 600; color: #374151; text-align: center; }
+        .draggable-item:hover { background-color: #eff6ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
+        .sortable-ghost { background-color: #dbeafe; border: 2px dashed #60a5fa; opacity: 0.7; }
+
+        /* FIX: Sheet selector modal */
+        #sheet-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        #sheet-modal-overlay.hidden { display: none; }
+        #sheet-modal {
+            background: white; border-radius: 0.75rem; padding: 1.5rem;
+            min-width: 300px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .sheet-option-btn {
+            width: 100%; text-align: left; padding: 0.6rem 0.9rem;
+            border: 1px solid #e5e7eb; border-radius: 0.375rem;
+            margin-bottom: 0.4rem; cursor: pointer; transition: all 0.15s;
+            font-size: 0.875rem; background: #f9fafb;
+        }
+        .sheet-option-btn:hover { background: #eff6ff; border-color: #3b82f6; }
+
+        /* FIX: Blacklist toggle for smart sync columns */
+        .blacklist-toggle {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            font-size: 0.7rem; cursor: pointer; padding: 0.1rem 0.4rem;
+            border-radius: 9999px; border: 1px solid #d1d5db;
+            background: #f9fafb; color: #6b7280; margin-left: 0.25rem;
+            transition: all 0.15s; vertical-align: middle;
+        }
+        .blacklist-toggle:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+        .blacklist-toggle.blacklisted { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <!-- FIX #3: Sheet selection modal -->
+    <div id="sheet-modal-overlay" class="hidden">
+        <div id="sheet-modal">
+            <h3 class="font-semibold text-slate-800 mb-1" id="sheet-modal-title">Select a Sheet</h3>
+            <p class="text-xs text-gray-500 mb-3" id="sheet-modal-desc">This file has multiple sheets. Choose which one to use.</p>
+            <div id="sheet-modal-options"></div>
+            <button id="sheet-modal-cancel" class="mt-2 w-full py-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
+        </div>
+    </div>
+
+    <div class="w-screen h-screen bg-white flex flex-col">
+        <!-- Header -->
+        <header class="bg-slate-800 text-white p-4 shadow-md flex-shrink-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold tracking-wider">Smart VLOOKUP Tool</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">v2.0 — All fixes applied</p>
+                </div>
+                <p class="font-dancing-script text-xl text-slate-300">Creator: Ahmad Rezazadeh</p>
+            </div>
+        </header>
+
+        <main class="flex-grow p-6 overflow-y-auto">
+            <div id="top-message-area" class="hidden mb-6 p-4 text-center text-white font-semibold rounded-lg"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full">
+                
+                <!-- Left Column (Controls) -->
+                <div class="lg:col-span-1 h-full">
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4 h-full flex flex-col">
+                        <div class="flex-grow space-y-4">
+                            <div class="flex items-center gap-3"><span class="step-badge">1</span><h3 class="font-semibold text-lg text-slate-700">Setup</h3></div>
+                             <div class="space-y-4">
+                                <div>
+                                    <label id="file1-label" class="block text-sm font-medium text-gray-700 mb-1">Source File (Destination)</label>
+                                    <!-- FIX #3: Shows sheet selector if needed -->
+                                    <label for="file1" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                        <div class="flex items-center gap-2"><svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file1-name" class="block text-sm text-gray-600">Upload</span></div>
+                                    </label>
+                                    <input id="file1" type="file" class="hidden" accept=".xlsx, .xls, .csv">
+                                    <p id="file1-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
+                                </div>
+                                <div>
+                                    <label id="file2-label" class="block text-sm font-medium text-gray-700 mb-1">Lookup File (Source)</label>
+                                    <label for="file2" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                        <div class="flex items-center gap-2"><svg class="mx-auto h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg><span id="file2-name" class="block text-sm text-gray-600">Upload</span></div>
+                                    </label>
+                                    <input id="file2" type="file" class="hidden" accept=".xlsx, .xls, .csv">
+                                    <p id="file2-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
+                                </div>
+                            </div>
+                            <hr>
+                            <!-- Key Column Section -->
+                            <div id="key-column-section">
+                                <label for="common-column" class="block text-sm font-medium text-gray-700">Key Column</label>
+                                <select id="common-column" class="mt-1 block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                    <option value="">Detecting...</option>
+                                </select>
+                                <p id="key-column-desc" class="mt-2 text-xs text-gray-500">The column used to match rows.</p>
+                                <div id="create-key-column-prompt" class="hidden mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-xs">
+                                    <p class="font-semibold text-yellow-800">This key column does not exist in the Source File.</p>
+                                    <button id="create-key-btn" class="mt-1.5 w-full text-xs font-bold py-1 px-2 rounded bg-yellow-400 hover:bg-yellow-500 text-yellow-900 transition-colors">
+                                        Create Key Column in Output
+                                    </button>
+                                </div>
+                            </div>
+                            <hr>
+                             <!-- VLOOKUP Mode Options -->
+                             <div id="vlookup-options" class="relative flex items-start">
+                                <div class="flex h-6 items-center">
+                                    <input id="smart-sync-checkbox" name="smart-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" checked>
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <label for="smart-sync-checkbox" class="font-medium text-gray-900">Smart Sync</label>
+                                    <!-- FIX #6: Clarified description -->
+                                    <p class="text-gray-500 text-xs">Auto-add unmapped columns. Use ✕ on column tags to exclude specific ones.</p>
+                                </div>
+                            </div>
+                            <!-- Action Buttons -->
+                            <div class="mt-4 grid grid-cols-2 gap-2">
+                                <button id="process-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300">
+                                    START VLOOKUP
+                                </button>
+                                <a id="download-link" href="#" style="pointer-events: none;" class="w-full text-center items-center justify-center flex bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed transition-colors">
+                                    Download File
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Workspace) -->
+                <div id="workspace" class="lg:col-span-3 h-full">
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4 h-full flex flex-col">
+                        <div class="flex-grow flex flex-col">
+                            <div class="flex items-center justify-between gap-3 mb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="step-badge">2</span>
+                                    <h2 id="workspace-title" class="text-xl font-semibold text-slate-700">Manual Column Mappings</h2>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button id="refresh-btn" title="Reset All" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 14.23-5.77M20 15a9 9 0 0 1-14.23 5.77" />
+                                        </svg>
+                                        Reset
+                                    </button>
+                                    <button id="undo-btn" title="Undo Last Action" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6 6m0 0l-6-6m6 6V9a6 6 0 0112 0v3" /></svg>
+                                        Undo
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="workspace-desc" class="text-xs text-gray-500 mb-2">Click a column from the left list, then a column from the right list to create a mapping. Similar names are mapped automatically.</p>
+                            <div id="visual-mapper" class="grid grid-cols-2 gap-4 mt-2 flex-grow">
+                                <div>
+                                    <h4 id="lookup-columns-label" class="font-semibold text-sm text-center mb-2 text-slate-600">Lookup File Columns (Source)</h4>
+                                    <div id="lookup-columns-list" class="h-full overflow-y-auto p-2 border rounded-md bg-white space-y-1"></div>
+                                </div>
+                                <div>
+                                    <h4 id="destination-columns-label" class="font-semibold text-sm text-center mb-2 text-slate-600">Source File Columns (Destination)</h4>
+                                    <div id="destination-columns-list" class="h-full overflow-y-auto p-2 border rounded-md bg-white space-y-1"></div>
+                                </div>
+                            </div>
+                            <div id="created-mappings-tags" class="mt-4 flex flex-wrap gap-2 min-h-[2rem]"></div>
+                            <!-- FIX #6: Smart Sync blacklisted columns area -->
+                            <div id="smart-sync-blacklist-area" class="hidden mt-2">
+                                <p class="text-xs text-gray-400 mb-1">Excluded from Smart Sync:</p>
+                                <div id="blacklisted-tags" class="flex flex-wrap gap-1"></div>
+                            </div>
+                        </div>
+                        <hr id="workspace-separator" />
+                        <div id="arrange-columns-step">
+                             <div class="flex items-center gap-3 mb-4"><span class="step-badge">3</span><h2 class="text-xl font-semibold text-slate-700">Arrange Output Columns</h2></div>
+                            <p class="text-xs text-gray-500 mb-2">Drag the column headers to set their final order.</p>
+                            <div id="column-arranger" class="flex flex-nowrap gap-0 overflow-x-auto pb-4 mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ============================================================
+        //  STATE & UI ELEMENTS
+        // ============================================================
+        const topMessageArea      = document.getElementById('top-message-area');
+        const file1Input          = document.getElementById('file1');
+        const file2Input          = document.getElementById('file2');
+        const file1NameEl         = document.getElementById('file1-name');
+        const file2NameEl         = document.getElementById('file2-name');
+        const file1SheetInfo      = document.getElementById('file1-sheet-info');
+        const file2SheetInfo      = document.getElementById('file2-sheet-info');
+        const commonColumnSelect  = document.getElementById('common-column');
+        const processBtn          = document.getElementById('process-btn');
+        const downloadLink        = document.getElementById('download-link');
+        const smartSyncCheckbox   = document.getElementById('smart-sync-checkbox');
+        const createKeyColumnPrompt = document.getElementById('create-key-column-prompt');
+        const columnArranger      = document.getElementById('column-arranger');
+        const lookupColumnsList   = document.getElementById('lookup-columns-list');
+        const destinationColumnsList = document.getElementById('destination-columns-list');
+        const createdMappingsTags = document.getElementById('created-mappings-tags');
+        const undoBtn             = document.getElementById('undo-btn');
+        const refreshBtn          = document.getElementById('refresh-btn');
+        const arrangeColumnsStep  = document.getElementById('arrange-columns-step');
+        const blacklistArea       = document.getElementById('smart-sync-blacklist-area');
+        const blacklistedTagsEl   = document.getElementById('blacklisted-tags');
+
+        // Sheet modal elements
+        const sheetModalOverlay   = document.getElementById('sheet-modal-overlay');
+        const sheetModalTitle     = document.getElementById('sheet-modal-title');
+        const sheetModalDesc      = document.getElementById('sheet-modal-desc');
+        const sheetModalOptions   = document.getElementById('sheet-modal-options');
+        const sheetModalCancel    = document.getElementById('sheet-modal-cancel');
+
+        // Data state
+        let file1Data = [], file2Data = [];
+        let file1Headers = [], file2Headers = [];
+        let originalFile1Headers = [], originalFile2Headers = [];
+        let mappings = [];
+        let stateHistory = [];
+        let selectedSourceColumn = null;
+
+        // FIX #2: Track current blob URL to revoke on next generation
+        let currentBlobUrl = null;
+
+        // FIX #6: Blacklist for Smart Sync columns
+        let smartSyncBlacklist = new Set();
+
+
+        // ============================================================
+        //  MESSAGING
+        // ============================================================
+        const showMessage = (message, type = 'info') => {
+            topMessageArea.textContent = message;
+            topMessageArea.classList.remove('hidden', 'bg-green-500', 'bg-red-500', 'bg-blue-500');
+            if (type === 'success') topMessageArea.classList.add('bg-green-500');
+            else if (type === 'error') topMessageArea.classList.add('bg-red-500');
+            else topMessageArea.classList.add('bg-blue-500');
+        };
+        const hideMessage = () => topMessageArea.classList.add('hidden');
+
+
+        // ============================================================
+        //  FIX #3: SHEET SELECTION MODAL
+        // ============================================================
+        /**
+         * Shows a modal to let the user pick a sheet.
+         * Returns a Promise that resolves with the chosen sheet name,
+         * or rejects if the user cancels.
+         */
+        const pickSheet = (sheetNames, fileName) => {
+            return new Promise((resolve, reject) => {
+                sheetModalTitle.textContent = `Select a Sheet — ${fileName}`;
+                sheetModalDesc.textContent = `This file has ${sheetNames.length} sheets. Which one should be used?`;
+                sheetModalOptions.innerHTML = '';
+
+                sheetNames.forEach((name, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'sheet-option-btn';
+                    btn.textContent = `${i + 1}. ${name}`;
+                    btn.addEventListener('click', () => {
+                        sheetModalOverlay.classList.add('hidden');
+                        resolve(name);
+                    });
+                    sheetModalOptions.appendChild(btn);
+                });
+
+                sheetModalCancel.onclick = () => {
+                    sheetModalOverlay.classList.add('hidden');
+                    reject(new Error('Sheet selection cancelled.'));
+                };
+
+                sheetModalOverlay.classList.remove('hidden');
+            });
+        };
+
+
+        // ============================================================
+        //  CORE: FILE READING  (FIX #3: multi-sheet support)
+        // ============================================================
+        const readFile = async (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = err => reject(err);
+                reader.onload = async (e) => {
+                    try {
+                        const data = e.target.result;
+                        const workbook = XLSX.read(data, { type: 'array' });
+
+                        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                            reject(new Error("No sheets found in the file."));
+                            return;
+                        }
+
+                        let sheetName;
+                        if (workbook.SheetNames.length === 1) {
+                            // Only one sheet — use it silently
+                            sheetName = workbook.SheetNames[0];
+                        } else {
+                            // Multiple sheets — ask the user
+                            try {
+                                sheetName = await pickSheet(workbook.SheetNames, file.name);
+                            } catch (cancelErr) {
+                                reject(cancelErr);
+                                return;
+                            }
+                        }
+
+                        const worksheet = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                        resolve({ json, sheetName, totalSheets: workbook.SheetNames.length });
+
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        };
+
+        const sanitizeDataKeys = (data) => data.map(row => {
+            const sanitizedRow = {};
+            Object.keys(row).forEach(key => { sanitizedRow[key.trim()] = row[key]; });
+            return sanitizedRow;
+        });
+
+        const getAllHeaders = data => {
+            const orderedHeaders = [];
+            const seenHeaders = new Set();
+            data.forEach(row => {
+                Object.keys(row).forEach(key => {
+                    if (key && !key.startsWith('__EMPTY') && !seenHeaders.has(key)) {
+                        seenHeaders.add(key);
+                        orderedHeaders.push(key);
+                    }
+                });
+            });
+            return orderedHeaders;
+        };
+
+        const normalizeKey = (key) => {
+            if (key === undefined || key === null) return "";
+            return String(key).trim().toLowerCase();
+        };
+
+
+        // ============================================================
+        //  SIMILARITY ALGORITHM  (FIX #5: length guard for Levenshtein)
+        // ============================================================
+        const areHeadersSimilar = (h1, h2) => {
+            const n1 = String(h1).toLowerCase().trim();
+            const n2 = String(h2).toLowerCase().trim();
+
+            if (n1 === n2) return true;
+
+            const normalize = (str) => str
+                .replace(/[\s_-]+/g, ' ')
+                .replace(/[^a-z0-9\s]/gi, '')
+                .trim();
+
+            let norm1 = normalize(n1);
+            let norm2 = normalize(n2);
+
+            if (norm1 === norm2) return true;
+
+            const synonyms = [
+                ['id', 'code', 'key', 'number', 'no', 'tag', 'identifier'],
+                ['price', 'cost', 'value', 'amount'],
+                ['name', 'title', 'label'],
+                ['desc', 'description', 'details'],
+                ['qty', 'quantity', 'count'],
+                ['date', 'time', 'timestamp'],
+                ['address', 'location', 'city', 'country'],
+                ['max', 'maximum'],
+                ['min', 'minimum'],
+                ['temp', 'temperature']
+            ];
+
+            const getSynonymRoot = (word) => {
+                for (const group of synonyms) {
+                    if (group.includes(word)) return group[0];
+                }
+                return word;
+            };
+
+            let tokens1 = norm1.split(' ').map(getSynonymRoot);
+            let tokens2 = norm2.split(' ').map(getSynonymRoot);
+
+            if (tokens1.join(' ') === tokens2.join(' ')) return true;
+
+            // FIX #5: Skip Levenshtein for strings longer than 50 chars to avoid O(n*m) perf hit
+            const s1 = tokens1.join('');
+            const s2 = tokens2.join('');
+            if (s1.length > 50 || s2.length > 50) return false;
+
+            const levenshteinDistance = (s, t) => {
+                if (!s.length) return t.length;
+                if (!t.length) return s.length;
+                const arr = [];
+                for (let i = 0; i <= t.length; i++) {
+                    arr[i] = [i];
+                    for (let j = 1; j <= s.length; j++) {
+                        arr[i][j] = i === 0 ? j : Math.min(
+                            arr[i - 1][j] + 1,
+                            arr[i][j - 1] + 1,
+                            arr[i - 1][j - 1] + (s[j - 1] === t[i - 1] ? 0 : 1)
+                        );
+                    }
+                }
+                return arr[t.length][s.length];
+            };
+
+            const distance = levenshteinDistance(s1, s2);
+            const maxLength = Math.max(s1.length, s2.length);
+
+            if (maxLength > 3 && distance / maxLength < 0.25) return true;
+
+            return false;
+        };
+
+        const escapeAttr = (str) => String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+
+        // ============================================================
+        //  UNDO FUNCTIONALITY
+        // ============================================================
+        const saveCurrentState = () => {
+            stateHistory.push({
+                mappings: JSON.parse(JSON.stringify(mappings)),
+                file1Headers: [...file1Headers],
+                file2Headers: [...file2Headers],
+                // FIX #6: also save blacklist
+                smartSyncBlacklist: new Set(smartSyncBlacklist)
+            });
+            updateUndoButtonState();
+        };
+
+        const undoLastAction = () => {
+            if (stateHistory.length > 0) {
+                const lastState = stateHistory.pop();
+                mappings = lastState.mappings;
+                file1Headers = lastState.file1Headers;
+                file2Headers = lastState.file2Headers;
+                smartSyncBlacklist = lastState.smartSyncBlacklist;
+                renderAll();
+                updateUndoButtonState();
+            }
+        };
+
+        const updateUndoButtonState = () => { undoBtn.disabled = stateHistory.length === 0; };
+        const resetStateHistory = () => { stateHistory = []; updateUndoButtonState(); };
+
+
+        // ============================================================
+        //  UI & STATE MANAGEMENT
+        // ============================================================
+        const hardReset = () => {
+            hideMessage();
+            file1Input.value = '';
+            file2Input.value = '';
+            file1NameEl.textContent = 'Upload';
+            file2NameEl.textContent = 'Upload';
+            file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
+            file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
+            file1SheetInfo.classList.add('hidden');
+            file2SheetInfo.classList.add('hidden');
+            commonColumnSelect.innerHTML = '<option>Upload files first</option>';
+            resetDownloadButton();
+            resetStateHistory();
+            file1Data = []; file2Data = [];
+            file1Headers = []; file2Headers = [];
+            originalFile1Headers = []; originalFile2Headers = [];
+            mappings = [];
+            smartSyncBlacklist = new Set();
+            renderAll();
+        };
+
+        const softResetWorkspace = async () => {
+            if (originalFile1Headers.length === 0 || originalFile2Headers.length === 0) {
+                hardReset();
+                return;
+            }
+            hideMessage();
+            resetDownloadButton();
+            resetStateHistory();
+            file1Headers = [...originalFile1Headers];
+            file2Headers = [...originalFile2Headers];
+            mappings = [];
+            smartSyncBlacklist = new Set();
+            selectedSourceColumn = null;
+            await autoDetectAndMap();
+            showMessage('Workspace has been reset.', 'info');
+        };
+
+        // FIX #2: Revoke old Blob URL before creating a new one
+        const resetDownloadButton = () => {
+            if (currentBlobUrl) {
+                URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = null;
+            }
+            downloadLink.removeAttribute('href');
+            downloadLink.classList.remove('bg-green-600', 'hover:bg-green-700');
+            downloadLink.classList.add('bg-gray-400', 'cursor-not-allowed');
+            downloadLink.style.pointerEvents = 'none';
+            downloadLink.textContent = 'Download File';
+        };
+
+        const activateDownloadButton = (url, filename) => {
+            downloadLink.href = url;
+            downloadLink.setAttribute('download', filename);
+            downloadLink.classList.remove('bg-gray-400', 'cursor-not-allowed');
+            downloadLink.classList.add('bg-green-600', 'hover:bg-green-700');
+            downloadLink.style.pointerEvents = 'auto';
+            downloadLink.textContent = 'Download VLOOKUP File';
+        };
+
+        const autoDetectAndMap = async () => {
+            await autoDetectKeyColumn();
+            handleKeyColumnChange();
+        };
+
+
+        // ============================================================
+        //  FIX #4: KEY COLUMN AUTO-DETECT WITH HEURISTICS
+        // ============================================================
+        /**
+         * Scores a header name to estimate how likely it is to be
+         * a unique identifier / key column. Higher score = better candidate.
+         */
+        const scoreKeyColumnCandidate = (header) => {
+            const h = String(header).toLowerCase().trim();
+            let score = 0;
+
+            // Strong ID-like keywords
+            const strongKeywords = ['id', 'code', 'key', 'no', 'number', 'identifier', 'ref', 'reference', 'sku', 'barcode', 'serial'];
+            // Weak / likely non-key keywords
+            const weakKeywords = ['name', 'title', 'description', 'desc', 'address', 'date', 'time', 'price', 'amount', 'qty', 'quantity', 'status', 'note', 'comment'];
+
+            strongKeywords.forEach(kw => {
+                if (h === kw) score += 10;
+                else if (h.includes(kw)) score += 5;
+            });
+
+            weakKeywords.forEach(kw => {
+                if (h === kw || h.includes(kw)) score -= 3;
+            });
+
+            return score;
+        };
+
+        const autoDetectKeyColumn = async () => {
+            const headers1 = originalFile1Headers;
+            const headers2 = originalFile2Headers;
+
+            // Only consider columns that exist in BOTH files
+            const commonHeaders = headers1.filter(h => headers2.includes(h));
+
+            if (commonHeaders.length === 0) {
+                commonColumnSelect.innerHTML = '<option value="">No common columns found</option>';
+                return;
+            }
+
+            // FIX #4: Sort candidates by score descending, pick the best
+            const scored = commonHeaders.map(h => ({ h, score: scoreKeyColumnCandidate(h) }));
+            scored.sort((a, b) => b.score - a.score);
+
+            commonColumnSelect.innerHTML = scored.map(({ h }) =>
+                `<option value="${escapeAttr(h)}">${h}</option>`
+            ).join('');
+
+            // Best candidate is now first
+            commonColumnSelect.value = scored[0].h;
+        };
+
+        const handleKeyColumnChange = () => {
+            const selectedKey = commonColumnSelect.value;
+            createKeyColumnPrompt.classList.toggle('hidden', !selectedKey || originalFile1Headers.includes(selectedKey));
+            mappings = mappings.filter(m => !m.auto);
+            autoMapColumns();
+            renderAll();
+        };
+
+        const autoMapColumns = () => {
+            const commonColumn = commonColumnSelect.value;
+            const sourcePool = file2Headers;
+            const destPool = file1Headers;
+
+            sourcePool.forEach(sh => {
+                const matchingDestHeader = destPool.find(dh =>
+                    areHeadersSimilar(sh, dh) &&
+                    !mappings.some(m => m.destination === dh)
+                );
+                if (matchingDestHeader) {
+                    const isSourceMapped = mappings.some(m => m.source === sh);
+                    if (!isSourceMapped && normalizeKey(matchingDestHeader) !== normalizeKey(commonColumn)) {
+                        mappings.push({ source: sh, destination: matchingDestHeader, auto: true });
+                    }
+                }
+            });
+        };
+
+
+        // ============================================================
+        //  RENDERING
+        // ============================================================
+        const renderAll = () => {
+            try {
+                const icon = `<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>`;
+                createdMappingsTags.innerHTML = mappings.map((m, index) =>
+                    `<div class="mapping-tag ${m.auto ? 'bg-slate-200 text-slate-700' : 'bg-indigo-100 text-indigo-800'}">
+                        <span>${escapeAttr(m.source)}</span>${icon}<span>${escapeAttr(m.destination)}</span>
+                        <button class="remove-tag-btn ml-2" data-index="${index}" title="Remove mapping">&times;</button>
+                    </div>`
+                ).join('');
+
+                const usedSourceCols = new Set(mappings.map(m => m.source));
+                const usedDestCols = new Set(mappings.map(m => m.destination));
+
+                // FIX #1: Use column NAME (not index) as the key for delete operations
+                // data-col-name stores the actual column name; index is only for display ordering
+                const colItemTemplate = (colName, type) => `
+                    <div class="column-item" data-column-name="${escapeAttr(colName)}" title="Click to select for mapping.">
+                        ${escapeAttr(colName)}
+                        <button class="delete-col-btn" data-col-type="${type}" data-col-name="${escapeAttr(colName)}" title="Remove column from processing">&times;</button>
+                    </div>`;
+
+                let sourceHTML = '';
+                file2Headers.forEach(colName => {
+                    if (!usedSourceCols.has(colName)) sourceHTML += colItemTemplate(colName, 'source');
+                });
+                lookupColumnsList.innerHTML = sourceHTML;
+
+                let destHTML = '';
+                file1Headers.forEach(colName => {
+                    if (!usedDestCols.has(colName)) destHTML += colItemTemplate(colName, 'destination');
+                });
+                destinationColumnsList.innerHTML = destHTML;
+
+                // FIX #6: Render Smart Sync blacklist controls
+                renderBlacklistArea();
+
+                setupColumnArranger();
+            } catch (error) {
+                console.error("A critical error occurred during rendering:", error);
+                showMessage("An unexpected error occurred while updating the UI. Please try resetting.", "error");
+            }
+        };
+
+        // FIX #6: Show blacklisted columns with option to restore them
+        const renderBlacklistArea = () => {
+            if (!smartSyncCheckbox.checked || smartSyncBlacklist.size === 0) {
+                blacklistArea.classList.add('hidden');
+                return;
+            }
+            blacklistArea.classList.remove('hidden');
+            blacklistedTagsEl.innerHTML = [...smartSyncBlacklist].map(col =>
+                `<span class="inline-flex items-center gap-1 text-xs bg-red-50 border border-red-200 text-red-600 px-2 py-0.5 rounded-full">
+                    ${escapeAttr(col)}
+                    <button class="restore-blacklist-btn hover:text-red-900 font-bold" data-col="${escapeAttr(col)}" title="Restore to Smart Sync">&times;</button>
+                </span>`
+            ).join('');
+        };
+
+
+        // ============================================================
+        //  CLICK HANDLER FOR VISUAL MAPPER
+        // ============================================================
+        const handleVisualMapperClick = (e) => {
+            // FIX #6: Handle Smart Sync blacklist toggle (exclude from auto-add)
+            const blacklistBtn = e.target.closest('.blacklist-toggle');
+            if (blacklistBtn) {
+                saveCurrentState();
+                const col = blacklistBtn.dataset.col;
+                if (smartSyncBlacklist.has(col)) {
+                    smartSyncBlacklist.delete(col);
+                } else {
+                    smartSyncBlacklist.add(col);
+                }
+                renderAll();
+                return;
+            }
+
+            // FIX #1: Delete by column NAME, not stale array index
+            const deleteButton = e.target.closest('.delete-col-btn');
+            const columnItem = e.target.closest('.column-item');
+
+            if (deleteButton) {
+                try {
+                    saveCurrentState();
+                    const colType = deleteButton.dataset.colType;
+                    // FIX #1: Use data-col-name attribute instead of data-col-original-index
+                    const colNameToDelete = deleteButton.dataset.colName;
+
+                    if (colType === 'source') {
+                        file2Headers = file2Headers.filter(h => h !== colNameToDelete);
+                        mappings = mappings.filter(m => m.source !== colNameToDelete);
+                    } else {
+                        file1Headers = file1Headers.filter(h => h !== colNameToDelete);
+                        mappings = mappings.filter(m => m.destination !== colNameToDelete);
+                    }
+                    renderAll();
+                } catch (error) {
+                    console.error("Error during column deletion:", error);
+                    showMessage("An error occurred while deleting the column.", "error");
+                }
+            } else if (columnItem) {
+                try {
+                    saveCurrentState();
+                    const columnName = columnItem.dataset.columnName;
+                    const parentListId = columnItem.parentElement.id;
+
+                    if (parentListId === 'lookup-columns-list') {
+                        const currentlySelected = lookupColumnsList.querySelector('.selected');
+                        if (currentlySelected) currentlySelected.classList.remove('selected');
+                        columnItem.classList.add('selected');
+                        selectedSourceColumn = columnName;
+                    } else if (parentListId === 'destination-columns-list' && selectedSourceColumn) {
+                        const source = selectedSourceColumn;
+                        const destination = columnName;
+                        if (!mappings.some(m => m.source === source && m.destination === destination)) {
+                            mappings.push({ source, destination, auto: false });
+                            renderAll();
+                        }
+                        const currentlySelected = lookupColumnsList.querySelector('.selected');
+                        if (currentlySelected) currentlySelected.classList.remove('selected');
+                        selectedSourceColumn = null;
+                    }
+                } catch (error) {
+                    console.error("Error during column selection:", error);
+                    showMessage("An error occurred while selecting the column.", "error");
+                }
+            }
+        };
+
+        // FIX #6: Restore blacklisted column
+        blacklistedTagsEl.addEventListener('click', (e) => {
+            const restoreBtn = e.target.closest('.restore-blacklist-btn');
+            if (restoreBtn) {
+                saveCurrentState();
+                smartSyncBlacklist.delete(restoreBtn.dataset.col);
+                renderAll();
+            }
+        });
+
+
+        // ============================================================
+        //  COLUMN ARRANGER
+        // ============================================================
+        function setupColumnArranger() {
+            try {
+                arrangeColumnsStep.classList.remove('hidden');
+
+                const sortableInstance = Sortable.get(columnArranger);
+                if (sortableInstance) sortableInstance.destroy();
+
+                const commonColumn = commonColumnSelect.value;
+                let finalHeadersSet = new Set(file1Headers);
+                mappings.forEach(m => finalHeadersSet.add(m.destination));
+
+                if (smartSyncCheckbox.checked) {
+                    const mappedSourceCols = new Set(mappings.map(m => m.source));
+                    file2Headers.forEach(lookupHeader => {
+                        // FIX #6: Respect blacklist — don't auto-add blacklisted columns
+                        if (lookupHeader !== commonColumn
+                            && !mappedSourceCols.has(lookupHeader)
+                            && !smartSyncBlacklist.has(lookupHeader)) {
+                            finalHeadersSet.add(lookupHeader);
+                        }
+                    });
+                }
+
+                if (commonColumn && !finalHeadersSet.has(commonColumn) && !file1Headers.includes(commonColumn)) {
+                    finalHeadersSet.add(commonColumn);
+                }
+
+                const finalHeaderArray = [...finalHeadersSet];
+
+                // FIX #6: Add a blacklist toggle button per Smart Sync column in the arranger
+                const mappedSources = new Set(mappings.map(m => m.source));
+                const isSmartSyncCol = (header) =>
+                    smartSyncCheckbox.checked &&
+                    file2Headers.includes(header) &&
+                    !mappedSources.has(header) &&
+                    !file1Headers.includes(header);
+
+                columnArranger.innerHTML = finalHeaderArray.map(header => {
+                    const isSSCol = isSmartSyncCol(header);
+                    const blacklistBtn = isSSCol
+                        ? `<button class="blacklist-toggle ${smartSyncBlacklist.has(header) ? 'blacklisted' : ''}" data-col="${escapeAttr(header)}" title="Exclude from Smart Sync">✕ exclude</button>`
+                        : '';
+                    return `<div class="draggable-item">
+                        <div class="handle" title="Drag to reorder"><svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg></div>
+                        <span>${escapeAttr(header)}</span>
+                        ${blacklistBtn}
+                    </div>`;
+                }).join('');
+
+                if (finalHeaderArray.length > 0) {
+                    Sortable.create(columnArranger, { animation: 150, ghostClass: 'sortable-ghost', handle: '.handle' });
+                }
+            } catch (e) {
+                console.error("Error in setupColumnArranger:", e);
+            }
+        }
+
+
+        // ============================================================
+        //  VLOOKUP PROCESSING
+        // ============================================================
+        const processVlookup = () => {
+            const commonColumn = commonColumnSelect.value;
+            if (!commonColumn) throw new Error("Please select a Key Column for VLOOKUP.");
+
+            // Build lookup map (case-insensitive key)
+            const lookupMap = new Map();
+            file2Data.forEach(row => {
+                const key = normalizeKey(row[commonColumn]);
+                if (key) lookupMap.set(key, row);
+            });
+
+            if (lookupMap.size === 0) {
+                throw new Error("No valid (non-empty) keys found in the Lookup File's key column.");
+            }
+
+            let allMappings = [...mappings];
+            if (smartSyncCheckbox.checked) {
+                const mappedSources = new Set(allMappings.map(m => m.source));
+                file2Headers.forEach(h2 => {
+                    // FIX #6: Skip blacklisted columns in Smart Sync processing
+                    if (h2 !== commonColumn && !mappedSources.has(h2) && !smartSyncBlacklist.has(h2)) {
+                        allMappings.push({ source: h2, destination: h2, auto: true });
+                    }
+                });
+            }
+
+            let matchesFound = 0;
+            const resultData = file1Data.map(row1 => {
+                const newRow = { ...row1 };
+                const keyToLookup = normalizeKey(row1[commonColumn]);
+
+                if (keyToLookup) {
+                    const matchedRow = lookupMap.get(keyToLookup);
+                    if (matchedRow) {
+                        matchesFound++;
+                        allMappings.forEach(map => {
+                            if (matchedRow.hasOwnProperty(map.source)) {
+                                const newValue = matchedRow[map.source];
+                                // Don't overwrite with empty values
+                                if (newValue !== null && newValue !== undefined && newValue !== '') {
+                                    newRow[map.destination] = newValue;
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // Ensure all mapped destination columns exist in every row
+                allMappings.forEach(map => {
+                    if (!newRow.hasOwnProperty(map.destination)) {
+                        newRow[map.destination] = '';
+                    }
+                });
+
+                return newRow;
+            });
+
+            // Respect user-arranged column order
+            const arrangedHeaderItems = arrangeColumnsStep.querySelectorAll('.draggable-item span');
+            const finalHeaderOrder = arrangedHeaderItems.length > 0
+                ? Array.from(arrangedHeaderItems).map(item => item.textContent)
+                : getAllHeaders(resultData);
+
+            const finalData = resultData.map(row => {
+                const orderedRow = {};
+                finalHeaderOrder.forEach(header => {
+                    orderedRow[header] = row.hasOwnProperty(header) ? row[header] : '';
+                });
+                return orderedRow;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(finalData, { header: finalHeaderOrder });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'VLOOKUP_Result');
+            return { workbook: wb, matches: matchesFound };
+        };
+
+
+        // ============================================================
+        //  EVENT LISTENERS
+        // ============================================================
+        file1Input.addEventListener('change', async (e) => {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const fileName = e.target.files[0].name;
+            file1NameEl.textContent = fileName;
+            file1NameEl.classList.add('text-indigo-700', 'font-semibold');
+            resetDownloadButton();
+            hideMessage();
+            try {
+                const { json, sheetName, totalSheets } = await readFile(e.target.files[0]);
+                file1Data = sanitizeDataKeys(json);
+                const headers = getAllHeaders(file1Data);
+                originalFile1Headers = [...headers];
+                file1Headers = [...headers];
+                // FIX #3: Show which sheet was selected
+                if (totalSheets > 1) {
+                    file1SheetInfo.textContent = `Using sheet: "${sheetName}" (${totalSheets} sheets available)`;
+                    file1SheetInfo.classList.remove('hidden');
+                } else {
+                    file1SheetInfo.classList.add('hidden');
+                }
+                if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
+                else renderAll();
+            } catch (err) {
+                if (err.message !== 'Sheet selection cancelled.') {
+                    showMessage(`Error reading ${fileName}: ${err.message}`, 'error');
+                }
+                // Reset the file input if cancelled or error
+                file1Input.value = '';
+                file1NameEl.textContent = 'Upload';
+                file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
+                file1SheetInfo.classList.add('hidden');
+            }
+        });
+
+        file2Input.addEventListener('change', async (e) => {
+            if (!e.target.files || e.target.files.length === 0) return;
+            const fileName = e.target.files[0].name;
+            file2NameEl.textContent = fileName;
+            file2NameEl.classList.add('text-indigo-700', 'font-semibold');
+            resetDownloadButton();
+            hideMessage();
+            try {
+                const { json, sheetName, totalSheets } = await readFile(e.target.files[0]);
+                file2Data = sanitizeDataKeys(json);
+                const headers = getAllHeaders(file2Data);
+                originalFile2Headers = [...headers];
+                file2Headers = [...headers];
+                // FIX #3: Show which sheet was selected
+                if (totalSheets > 1) {
+                    file2SheetInfo.textContent = `Using sheet: "${sheetName}" (${totalSheets} sheets available)`;
+                    file2SheetInfo.classList.remove('hidden');
+                } else {
+                    file2SheetInfo.classList.add('hidden');
+                }
+                if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
+                else renderAll();
+            } catch (err) {
+                if (err.message !== 'Sheet selection cancelled.') {
+                    showMessage(`Error reading ${fileName}: ${err.message}`, 'error');
+                }
+                file2Input.value = '';
+                file2NameEl.textContent = 'Upload';
+                file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
+                file2SheetInfo.classList.add('hidden');
+            }
+        });
+
+        commonColumnSelect.addEventListener('change', () => {
+            resetStateHistory();
+            handleKeyColumnChange();
+        });
+
+        document.getElementById('visual-mapper').addEventListener('click', handleVisualMapperClick);
+        // FIX #6: Also listen for blacklist toggles in the column arranger
+        columnArranger.addEventListener('click', handleVisualMapperClick);
+
+        createdMappingsTags.addEventListener('click', (e) => {
+            try {
+                const removeButton = e.target.closest('.remove-tag-btn');
+                if (removeButton) {
+                    saveCurrentState();
+                    mappings.splice(parseInt(removeButton.dataset.index, 10), 1);
+                    renderAll();
+                }
+            } catch (error) {
+                console.error("Error removing mapping tag:", error);
+                showMessage("An unexpected error occurred.", "error");
+            }
+        });
+
+        undoBtn.addEventListener('click', undoLastAction);
+        refreshBtn.addEventListener('click', hardReset);
+
+        processBtn.addEventListener('click', async () => {
+            hideMessage();
+            if (!file1Data.length || !file2Data.length) {
+                showMessage('Please upload both files before starting.', 'error');
+                return;
+            }
+
+            processBtn.disabled = true;
+            processBtn.textContent = 'Processing...';
+            showMessage('Processing, please wait...', 'info');
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                const result = processVlookup();
+
+                if (!result.workbook || !result.workbook.SheetNames.length) {
+                    if (result.matches === 0) showMessage('No matches found based on the selected key column.', 'success');
+                    else showMessage('The process resulted in an empty file. Please check your mappings and data.', 'error');
+                    return;
+                }
+
+                const wbout = XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/octet-stream' });
+
+                // FIX #2: Revoke previous Blob URL before creating a new one (memory leak fix)
+                if (currentBlobUrl) {
+                    URL.revokeObjectURL(currentBlobUrl);
+                }
+                currentBlobUrl = URL.createObjectURL(blob);
+
+                let baseName = file1Input.files[0].name.replace(/\.[^/.]+$/, "");
+                const fileName = `${baseName}_vlookup.xlsx`;
+
+                activateDownloadButton(currentBlobUrl, fileName);
+                showMessage(`Success! ${result.matches} rows updated. Your file is ready for download.`, 'success');
+
+            } catch (error) {
+                console.error(error);
+                showMessage(`An error occurred: ${error.message}`, 'error');
+            } finally {
+                processBtn.disabled = false;
+                processBtn.textContent = 'START VLOOKUP';
+            }
+        });
+
+        smartSyncCheckbox.addEventListener('change', () => {
+            if (!smartSyncCheckbox.checked) smartSyncBlacklist = new Set();
+            renderAll();
+        });
+
+        // Initialize
+        hardReset();
+    </script>
+</body>
+</html>
