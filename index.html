@@ -5,9 +5,198 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart VLOOKUP Tool</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <!-- Inline CSS — replaces Tailwind CDN, zero warnings, zero network dependency -->
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+
+      /* ── Reset / base ── */
+      button, select, input { font-family: inherit; }
+      a { text-decoration: none; }
+
+      /* ── Layout ── */
+      .flex            { display: flex; }
+      .inline-flex     { display: inline-flex; }
+      .grid            { display: grid; }
+      .block           { display: block; }
+      .hidden          { display: none !important; }
+      .flex-col        { flex-direction: column; }
+      .flex-wrap       { flex-wrap: wrap; }
+      .flex-nowrap     { flex-wrap: nowrap; }
+      .flex-grow       { flex-grow: 1; }
+      .flex-shrink-0   { flex-shrink: 0; }
+      .items-center    { align-items: center; }
+      .items-start     { align-items: flex-start; }
+      .justify-center  { justify-content: center; }
+      .justify-between { justify-content: space-between; }
+      .justify-end     { justify-content: flex-end; }
+      .relative        { position: relative; }
+
+      /* ── Grid columns ── */
+      .grid-cols-1 { grid-template-columns: repeat(1,minmax(0,1fr)); }
+      .grid-cols-2 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      @media (min-width:1024px) {
+        .lg\\:grid-cols-4       { grid-template-columns: repeat(4,minmax(0,1fr)); }
+        .lg\\:col-span-1        { grid-column: span 1 / span 1; }
+        .lg\\:col-span-3        { grid-column: span 3 / span 3; }
+      }
+      @media (min-width:640px) {
+        .sm\\:grid-cols-4 { grid-template-columns: repeat(4,minmax(0,1fr)); }
+      }
+
+      /* ── Sizing ── */
+      .w-full   { width: 100%; }
+      .w-screen { width: 100vw; }
+      .h-full   { height: 100%; }
+      .h-screen { height: 100vh; }
+      .w-4  { width:  1rem; } .h-4  { height: 1rem; }
+      .w-5  { width: 1.25rem; } .h-5 { height: 1.25rem; }
+      .w-6  { width: 1.5rem; } .h-6  { height: 1.5rem; }
+      .mx-auto { margin-left: auto; margin-right: auto; }
+      .min-h-\\[2rem\\] { min-height: 2rem; }
+      .max-h-36 { max-height: 9rem; }
+
+      /* ── Spacing ── */
+      .p-2  { padding: .5rem; }   .p-3  { padding: .75rem; }
+      .p-4  { padding: 1rem; }   .p-6  { padding: 1.5rem; }
+      .px-2 { padding-left:.5rem; padding-right:.5rem; }
+      .px-3 { padding-left:.75rem; padding-right:.75rem; }
+      .px-4 { padding-left:1rem;  padding-right:1rem; }
+      .px-5 { padding-left:1.25rem; padding-right:1.25rem; }
+      .py-0\\.5 { padding-top:.125rem; padding-bottom:.125rem; }
+      .py-1  { padding-top:.25rem;  padding-bottom:.25rem; }
+      .py-1\\.5{ padding-top:.375rem; padding-bottom:.375rem; }
+      .py-2  { padding-top:.5rem;   padding-bottom:.5rem; }
+      .py-3  { padding-top:.75rem;  padding-bottom:.75rem; }
+      .pb-4  { padding-bottom:1rem; }
+      .pl-3  { padding-left:.75rem; }
+      .pr-8  { padding-right:2rem; }
+      .gap-0 { gap:0; } .gap-1 { gap:.25rem; } .gap-1\\.5 { gap:.375rem; }
+      .gap-2 { gap:.5rem; } .gap-3 { gap:.75rem; }
+      .gap-4 { gap:1rem; } .gap-8 { gap:2rem; }
+      .space-y-1 > * + * { margin-top:.25rem; }
+      .space-y-4 > * + * { margin-top:1rem; }
+      .mt-0\\.5{ margin-top:.125rem; }
+      .mt-1  { margin-top:.25rem; }
+      .mt-1\\.5{ margin-top:.375rem; }
+      .mt-2  { margin-top:.5rem; }
+      .mt-4  { margin-top:1rem; }
+      .mb-1  { margin-bottom:.25rem; }
+      .mb-2  { margin-bottom:.5rem; }
+      .mb-3  { margin-bottom:.75rem; }
+      .mb-4  { margin-bottom:1rem; }
+      .mb-5  { margin-bottom:1.25rem; }
+      .mb-6  { margin-bottom:1.5rem; }
+      .ml-2  { margin-left:.5rem; }
+      .ml-3  { margin-left:.75rem; }
+
+      /* ── Typography ── */
+      .text-xs   { font-size:.75rem;  line-height:1rem; }
+      .text-sm   { font-size:.875rem; line-height:1.25rem; }
+      .text-base { font-size:1rem;    line-height:1.5rem; }
+      .text-lg   { font-size:1.125rem;line-height:1.75rem; }
+      .text-xl   { font-size:1.25rem; line-height:1.75rem; }
+      .text-3xl  { font-size:1.875rem;line-height:2.25rem; }
+      .font-normal  { font-weight:400; }
+      .font-medium  { font-weight:500; }
+      .font-semibold{ font-weight:600; }
+      .font-bold    { font-weight:700; }
+      .font-mono    { font-family: ui-monospace,monospace; }
+      .text-center  { text-align:center; }
+      .leading-6    { line-height:1.5rem; }
+      .leading-none { line-height:1; }
+      .tracking-wide  { letter-spacing:.025em; }
+      .tracking-wider { letter-spacing:.05em; }
+      .uppercase  { text-transform:uppercase; }
+
+      /* ── Colors — text ── */
+      .text-white       { color:#fff; }
+      .text-gray-400    { color:#9ca3af; }
+      .text-gray-500    { color:#6b7280; }
+      .text-gray-600    { color:#4b5563; }
+      .text-gray-700    { color:#374151; }
+      .text-gray-900    { color:#111827; }
+      .text-slate-300   { color:#cbd5e1; }
+      .text-slate-400   { color:#94a3b8; }
+      .text-slate-500   { color:#64748b; }
+      .text-slate-600   { color:#475569; }
+      .text-slate-700   { color:#334155; }
+      .text-slate-800   { color:#1e293b; }
+      .text-indigo-600  { color:#4f46e5; }
+      .text-indigo-800  { color:#3730a3; }
+      .text-green-700   { color:#15803d; }
+      .text-red-600     { color:#dc2626; }
+      .text-yellow-800  { color:#92400e; }
+      .text-yellow-900  { color:#78350f; }
+
+      /* ── Colors — background ── */
+      .bg-white       { background-color:#fff; }
+      .bg-slate-50    { background-color:#f8fafc; }
+      .bg-slate-100   { background-color:#f1f5f9; }
+      .bg-slate-200   { background-color:#e2e8f0; }
+      .bg-slate-800   { background-color:#1e293b; }
+      .bg-gray-400    { background-color:#9ca3af; }
+      .bg-blue-800    { background-color:#1e40af; }
+      .bg-green-50    { background-color:#f0fdf4; }
+      .bg-red-50      { background-color:#fef2f2; }
+      .bg-yellow-100  { background-color:#fef9c3; }
+      .bg-yellow-400  { background-color:#facc15; }
+
+      /* ── Colors — border ── */
+      .border           { border-width:1px; border-style:solid; }
+      .border-2         { border-width:2px; border-style:solid; }
+      .border-dashed    { border-style:dashed; }
+      .border-transparent { border-color:transparent; }
+      .border-gray-300  { border-color:#d1d5db; }
+      .border-green-200 { border-color:#bbf7d0; }
+      .border-red-200   { border-color:#fecaca; }
+      .border-slate-200 { border-color:#e2e8f0; }
+      .border-yellow-300{ border-color:#fde047; }
+
+      /* ── Hover ── */
+      .hover\\:bg-blue-900:hover   { background-color:#1e3a8a; }
+      .hover\\:bg-slate-300:hover  { background-color:#cbd5e1; }
+      .hover\\:bg-slate-700:hover  { background-color:#334155; }
+      .hover\\:bg-yellow-500:hover { background-color:#eab308; }
+      .hover\\:text-gray-800:hover { color:#1f2937; }
+      .hover\\:text-red-900:hover  { color:#7f1d1d; }
+      .hover\\:text-white:hover    { color:#fff; }
+
+      /* ── Focus ── */
+      .focus\\:outline-none:focus  { outline:none; }
+      .focus\\:ring-2:focus        { box-shadow:0 0 0 2px rgba(99,102,241,.5); }
+      .focus\\:ring-offset-2:focus { box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(99,102,241,.5); }
+      .focus\\:border-indigo-500:focus { border-color:#6366f1; }
+      .focus\\:ring-blue-500:focus     { box-shadow:0 0 0 3px rgba(59,130,246,.4); }
+      .focus\\:ring-indigo-500:focus   { box-shadow:0 0 0 3px rgba(99,102,241,.4); }
+      .focus\\:ring-indigo-600:focus   { box-shadow:0 0 0 3px rgba(79,70,229,.4); }
+      .focus\\:ring-slate-500:focus    { box-shadow:0 0 0 3px rgba(100,116,139,.4); }
+
+      /* ── Disabled ── */
+      .disabled\\:opacity-50:disabled      { opacity:.5; }
+      .disabled\\:cursor-not-allowed:disabled { cursor:not-allowed; }
+
+      /* ── Misc ── */
+      .cursor-pointer      { cursor:pointer; }
+      .cursor-not-allowed  { cursor:not-allowed; }
+      .pointer-events-none { pointer-events:none; }
+      .overflow-hidden  { overflow:hidden; }
+      .overflow-x-auto  { overflow-x:auto; }
+      .overflow-y-auto  { overflow-y:auto; }
+      .rounded    { border-radius:.25rem; }
+      .rounded-md { border-radius:.375rem; }
+      .rounded-lg { border-radius:.5rem; }
+      .rounded-full { border-radius:9999px; }
+      .shadow-sm { box-shadow:0 1px 2px rgba(0,0,0,.05); }
+      .shadow-md { box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06); }
+      .transition-all    { transition:all .15s ease; }
+      .transition-colors { transition:color .15s ease,background-color .15s ease,border-color .15s ease; }
+      .duration-300 { transition-duration:.3s; }
+      .duration-700 { transition-duration:.7s; }
+      select { appearance:none; -webkit-appearance:none; }
+      hr { border:none; border-top:1px solid #e2e8f0; }
+    </style>
+
     <!-- SheetJS (for Excel & CSV) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
@@ -87,9 +276,227 @@
         }
         .blacklist-toggle:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
         .blacklist-toggle.blacklisted { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+
+        /* ── Data Preview Panel ── */
+        #preview-panel {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 2000; backdrop-filter: blur(2px);
+        }
+        #preview-panel.hidden { display: none; }
+        #preview-box {
+            background: white; border-radius: 0.75rem;
+            width: 92vw; max-width: 1100px;
+            max-height: 85vh; display: flex; flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        #preview-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 1.25rem; background: #1e293b; color: white; flex-shrink: 0;
+        }
+        #preview-tabs { display: flex; gap: 0.5rem; }
+        .preview-tab {
+            padding: 0.35rem 1rem; border-radius: 9999px; font-size: 0.8rem;
+            font-weight: 600; cursor: pointer; transition: all 0.15s; border: none;
+            background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7);
+        }
+        .preview-tab.active { background: #3b82f6; color: white; }
+        #preview-body { overflow: auto; flex-grow: 1; padding: 0; }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        .preview-table thead th {
+            position: sticky; top: 0; background: #f1f5f9;
+            padding: 0.5rem 0.75rem; text-align: left;
+            border-bottom: 2px solid #cbd5e1; white-space: nowrap;
+            font-weight: 700; color: #334155; z-index: 10;
+        }
+        .preview-table tbody td {
+            padding: 0.4rem 0.75rem; border-bottom: 1px solid #f1f5f9;
+            white-space: nowrap; max-width: 200px; overflow: hidden;
+            text-overflow: ellipsis; color: #475569;
+        }
+        .preview-table tbody tr:hover td { background: #eff6ff; }
+        .preview-table tbody tr:nth-child(even) td { background: #f8fafc; }
+        .preview-table tbody tr:nth-child(even):hover td { background: #eff6ff; }
+        #preview-footer {
+            padding: 0.6rem 1.25rem; background: #f8fafc;
+            border-top: 1px solid #e2e8f0; display: flex;
+            align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        /* ── Match Report Modal ── */
+        #report-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,0.6);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 3000; backdrop-filter: blur(2px);
+        }
+        #report-overlay.hidden { display: none; }
+        #report-box {
+            background: white; border-radius: 0.75rem;
+            width: 92vw; max-width: 700px; max-height: 85vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3); overflow: hidden;
+        }
+        #report-header {
+            padding: 1rem 1.25rem; background: #1e293b; color: white; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        #report-body { overflow-y: auto; flex-grow: 1; padding: 1.25rem; }
+        .stat-card {
+            border-radius: 0.5rem; padding: 0.9rem 1.1rem; text-align: center;
+        }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .stat-card .stat-lbl { font-size: 0.7rem; font-weight: 600; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .miss-key-badge {
+            display: inline-block; background: #fee2e2; color: #b91c1c;
+            border: 1px solid #fca5a5; border-radius: 0.25rem;
+            padding: 0.1rem 0.5rem; font-size: 0.75rem; margin: 0.15rem;
+            font-family: monospace;
+        }
+
+        /* ── Preview button below upload ── */
+        .preview-btn {
+            margin-top: 0.4rem; width: 100%; padding: 0.3rem;
+            font-size: 0.72rem; font-weight: 600; border-radius: 0.375rem;
+            border: 1px solid #c7d2fe; background: #eef2ff; color: #4338ca;
+            cursor: pointer; transition: all 0.15s; display: none;
+        }
+        .preview-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+        .preview-btn.visible { display: block; }
+
+        /* ── Clean Data panel ── */
+        #clean-data-panel {
+            background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 0.5rem; overflow: hidden;
+            transition: all 0.2s;
+        }
+        #clean-data-toggle {
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            padding: 0.6rem 0.75rem; background: none; border: none; cursor: pointer;
+            font-size: 0.8rem; font-weight: 600; color: #475569;
+            transition: background 0.15s;
+        }
+        #clean-data-toggle:hover { background: #f1f5f9; }
+        #clean-data-toggle .chevron {
+            transition: transform 0.2s; font-size: 0.65rem; color: #94a3b8;
+        }
+        #clean-data-toggle.open .chevron { transform: rotate(180deg); }
+        #clean-data-body {
+            padding: 0 0.75rem 0.75rem; display: none; border-top: 1px solid #e2e8f0;
+        }
+        #clean-data-body.open { display: block; }
+
+        .clean-option {
+            display: flex; align-items: flex-start; gap: 0.6rem;
+            padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9;
+        }
+        .clean-option:last-child { border-bottom: none; padding-bottom: 0; }
+        .clean-option input[type=checkbox] {
+            margin-top: 2px; width: 14px; height: 14px; flex-shrink: 0;
+            accent-color: #4f46e5; cursor: pointer;
+        }
+        .clean-option label { font-size: 0.75rem; color: #374151; cursor: pointer; line-height: 1.4; }
+        .clean-option label strong { display: block; font-weight: 600; color: #1e293b; }
+        .clean-option label span { color: #6b7280; font-size: 0.7rem; }
+
+        /* ── Download split button ── */
+        .download-group {
+            position: relative; display: flex; width: 100%;
+        }
+        #download-link {
+            flex: 1; border-radius: 0.5rem 0 0 0.5rem !important;
+        }
+        #download-format-btn {
+            flex-shrink: 0; width: 2.4rem;
+            background: #15803d; color: white; border: none;
+            border-left: 1px solid rgba(255,255,255,0.25);
+            border-radius: 0 0.5rem 0.5rem 0;
+            cursor: pointer; font-size: 1rem; display: flex;
+            align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        #download-format-btn:hover { background: #166534; }
+        #download-format-btn.disabled-fmt { background: #9ca3af; cursor: not-allowed; pointer-events: none; }
+        #download-format-menu {
+            position: absolute; bottom: calc(100% + 6px); right: 0;
+            background: white; border: 1px solid #e2e8f0;
+            border-radius: 0.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 160px; z-index: 100; overflow: hidden;
+        }
+        #download-format-menu.hidden { display: none; }
+        .fmt-option {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.6rem 0.9rem; font-size: 0.8rem; cursor: pointer;
+            transition: background 0.1s; color: #374151; font-weight: 500;
+            border: none; background: none; width: 100%; text-align: left;
+        }
+        .fmt-option:hover { background: #f1f5f9; }
+        .fmt-option .fmt-badge {
+            font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem; letter-spacing: 0.04em;
+        }
+        .fmt-badge-xlsx { background: #dcfce7; color: #15803d; }
+        .fmt-badge-csv  { background: #e0f2fe; color: #0369a1; }
+
+        /* active format indicator on button */
+        #download-format-btn .fmt-label {
+            font-size: 0.55rem; font-weight: 700; letter-spacing: 0.04em;
+            writing-mode: vertical-rl; transform: rotate(180deg);
+        }
+
+        /* ── Clean data badge on process button ── */
+        #clean-active-badge {
+            display: none; font-size: 0.6rem; background: rgba(255,255,255,0.2);
+            border-radius: 9999px; padding: 0.1rem 0.4rem; margin-left: 0.25rem;
+        }
+        #clean-active-badge.visible { display: inline; }
     </style>
 </head>
 <body class="bg-slate-100">
+
+    <!-- ══ DATA PREVIEW PANEL ══ -->
+    <div id="preview-panel" class="hidden">
+        <div id="preview-box">
+            <div id="preview-header">
+                <div>
+                    <h3 class="font-bold text-base" id="preview-title">Data Preview</h3>
+                    <p class="text-xs text-slate-400 mt-0.5" id="preview-subtitle"></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="preview-tabs">
+                        <button class="preview-tab active" data-file="1">Source File</button>
+                        <button class="preview-tab" data-file="2">Lookup File</button>
+                    </div>
+                    <button id="preview-close-btn" class="text-slate-400 hover:text-white transition-colors text-xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div id="preview-body">
+                <table class="preview-table">
+                    <thead id="preview-thead"></thead>
+                    <tbody id="preview-tbody"></tbody>
+                </table>
+            </div>
+            <div id="preview-footer">
+                <span id="preview-row-info" class="text-xs text-slate-500"></span>
+                <span class="text-xs text-slate-400">Showing first 10 rows</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ MATCH REPORT MODAL ══ -->
+    <div id="report-overlay" class="hidden">
+        <div id="report-box">
+            <div id="report-header">
+                <div>
+                    <h3 class="font-bold text-base">Match Report</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">VLOOKUP result analysis</p>
+                </div>
+                <button id="report-close-btn" class="text-slate-400 hover:text-white transition-colors text-xl leading-none">&times;</button>
+            </div>
+            <div id="report-body"></div>
+        </div>
+    </div>
 
     <!-- FIX #3: Sheet selection modal -->
     <div id="sheet-modal-overlay" class="hidden">
@@ -107,7 +514,7 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold tracking-wider">Smart VLOOKUP Tool</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">v2.0 — All fixes applied</p>
+                    <p class="text-xs text-slate-400 mt-0.5">v2.2 — CSV Export + Clean Data</p>
                 </div>
                 <p class="font-dancing-script text-xl text-slate-300">Creator: Ahmad Rezazadeh</p>
             </div>
@@ -132,6 +539,9 @@
                                     </label>
                                     <input id="file1" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file1-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
+                                    <button id="preview-btn-1" class="preview-btn" data-file="1">
+                                        👁 Preview Data (Source File)
+                                    </button>
                                 </div>
                                 <div>
                                     <label id="file2-label" class="block text-sm font-medium text-gray-700 mb-1">Lookup File (Source)</label>
@@ -140,6 +550,9 @@
                                     </label>
                                     <input id="file2" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file2-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
+                                    <button id="preview-btn-2" class="preview-btn" data-file="2">
+                                        👁 Preview Data (Lookup File)
+                                    </button>
                                 </div>
                             </div>
                             <hr>
@@ -158,25 +571,85 @@
                                 </div>
                             </div>
                             <hr>
-                             <!-- VLOOKUP Mode Options -->
+                             <!-- Smart Sync -->
                              <div id="vlookup-options" class="relative flex items-start">
                                 <div class="flex h-6 items-center">
                                     <input id="smart-sync-checkbox" name="smart-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" checked>
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
                                     <label for="smart-sync-checkbox" class="font-medium text-gray-900">Smart Sync</label>
-                                    <!-- FIX #6: Clarified description -->
-                                    <p class="text-gray-500 text-xs">Auto-add unmapped columns. Use ✕ on column tags to exclude specific ones.</p>
+                                    <p class="text-gray-500 text-xs">Auto-add unmapped columns. Use ✕ to exclude.</p>
                                 </div>
                             </div>
-                            <!-- Action Buttons -->
-                            <div class="mt-4 grid grid-cols-2 gap-2">
-                                <button id="process-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300">
-                                    START VLOOKUP
+
+                            <!-- ── Clean Data Panel ── -->
+                            <div id="clean-data-panel">
+                                <button id="clean-data-toggle" type="button">
+                                    <span style="display:flex;align-items:center;gap:0.4rem;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
+                                        Clean Data
+                                        <span id="clean-count-badge" style="display:none;background:#4f46e5;color:white;border-radius:9999px;font-size:0.6rem;padding:0 0.35rem;font-weight:700;"></span>
+                                    </span>
+                                    <span class="chevron">▼</span>
                                 </button>
-                                <a id="download-link" href="#" style="pointer-events: none;" class="w-full text-center items-center justify-center flex bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed transition-colors">
-                                    Download File
-                                </a>
+                                <div id="clean-data-body">
+                                    <div style="padding-top:0.5rem;">
+                                        <div class="clean-option">
+                                            <input type="checkbox" id="clean-trim" checked>
+                                            <label for="clean-trim">
+                                                <strong>Trim Spaces</strong>
+                                                <span>Remove leading/trailing whitespace from all cells</span>
+                                            </label>
+                                        </div>
+                                        <div class="clean-option">
+                                            <input type="checkbox" id="clean-case">
+                                            <label for="clean-case">
+                                                <strong>Normalize Case</strong>
+                                                <span>Convert key column values to UPPERCASE before matching</span>
+                                            </label>
+                                        </div>
+                                        <div class="clean-option">
+                                            <input type="checkbox" id="clean-zeros">
+                                            <label for="clean-zeros">
+                                                <strong>Strip Leading Zeros</strong>
+                                                <span>Match "007" with "7" in the key column</span>
+                                            </label>
+                                        </div>
+                                        <div class="clean-option">
+                                            <input type="checkbox" id="clean-empty">
+                                            <label for="clean-empty">
+                                                <strong>Remove Empty Rows</strong>
+                                                <span>Skip rows where the key column is blank</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ── Action Buttons ── -->
+                            <div class="mt-4" style="display:flex;flex-direction:column;gap:0.5rem;">
+                                <button id="process-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white bg-blue-800 hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300">
+                                    ▶ START VLOOKUP
+                                    <span id="clean-active-badge">✦ Clean</span>
+                                </button>
+                                <!-- Download split button -->
+                                <div class="download-group">
+                                    <a id="download-link" href="#" style="pointer-events:none;" class="w-full text-center items-center justify-center flex bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed transition-colors">
+                                        Download File
+                                    </a>
+                                    <button id="download-format-btn" class="disabled-fmt" title="Choose format">
+                                        <span class="fmt-label">XLSX</span>
+                                    </button>
+                                    <!-- Format dropdown -->
+                                    <div id="download-format-menu" class="hidden">
+                                        <button class="fmt-option" data-fmt="xlsx">
+                                            <span class="fmt-badge fmt-badge-xlsx">XLSX</span> Excel Workbook
+                                        </button>
+                                        <button class="fmt-option" data-fmt="csv">
+                                            <span class="fmt-badge fmt-badge-csv">CSV</span> Comma-Separated
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -260,6 +733,41 @@
         const blacklistArea       = document.getElementById('smart-sync-blacklist-area');
         const blacklistedTagsEl   = document.getElementById('blacklisted-tags');
 
+        // Clean Data elements
+        const cleanDataToggle     = document.getElementById('clean-data-toggle');
+        const cleanDataBody       = document.getElementById('clean-data-body');
+        const cleanCountBadge     = document.getElementById('clean-count-badge');
+        const cleanActiveBadge    = document.getElementById('clean-active-badge');
+        const cleanTrim           = document.getElementById('clean-trim');
+        const cleanCase           = document.getElementById('clean-case');
+        const cleanZeros          = document.getElementById('clean-zeros');
+        const cleanEmpty          = document.getElementById('clean-empty');
+
+        // Download format elements
+        const downloadFormatBtn   = document.getElementById('download-format-btn');
+        const downloadFormatMenu  = document.getElementById('download-format-menu');
+        let   currentFormat       = 'xlsx'; // 'xlsx' | 'csv'
+        let   lastFinalData       = null;   // store last result for re-export
+        let   lastFinalHeaders    = null;
+        let   lastBaseName        = '';
+
+        // Preview panel elements
+        const previewPanel        = document.getElementById('preview-panel');
+        const previewTitle        = document.getElementById('preview-title');
+        const previewSubtitle     = document.getElementById('preview-subtitle');
+        const previewThead        = document.getElementById('preview-thead');
+        const previewTbody        = document.getElementById('preview-tbody');
+        const previewRowInfo      = document.getElementById('preview-row-info');
+        const previewCloseBtn     = document.getElementById('preview-close-btn');
+        const previewTabs         = document.querySelectorAll('.preview-tab');
+        const previewBtn1         = document.getElementById('preview-btn-1');
+        const previewBtn2         = document.getElementById('preview-btn-2');
+
+        // Report modal elements
+        const reportOverlay       = document.getElementById('report-overlay');
+        const reportBody          = document.getElementById('report-body');
+        const reportCloseBtn      = document.getElementById('report-close-btn');
+
         // Sheet modal elements
         const sheetModalOverlay   = document.getElementById('sheet-modal-overlay');
         const sheetModalTitle     = document.getElementById('sheet-modal-title');
@@ -280,6 +788,300 @@
 
         // FIX #6: Blacklist for Smart Sync columns
         let smartSyncBlacklist = new Set();
+
+
+        // ============================================================
+        //  CLEAN DATA PANEL
+        // ============================================================
+        const updateCleanBadge = () => {
+            const active = [cleanTrim, cleanCase, cleanZeros, cleanEmpty].filter(c => c.checked).length;
+            if (active > 0) {
+                cleanCountBadge.textContent = active;
+                cleanCountBadge.style.display = 'inline';
+                cleanActiveBadge.classList.add('visible');
+            } else {
+                cleanCountBadge.style.display = 'none';
+                cleanActiveBadge.classList.remove('visible');
+            }
+        };
+
+        cleanDataToggle.addEventListener('click', () => {
+            const isOpen = cleanDataBody.classList.contains('open');
+            cleanDataBody.classList.toggle('open', !isOpen);
+            cleanDataToggle.classList.toggle('open', !isOpen);
+        });
+
+        [cleanTrim, cleanCase, cleanZeros, cleanEmpty].forEach(cb => {
+            cb.addEventListener('change', updateCleanBadge);
+        });
+
+        /**
+         * Apply selected clean operations to a key value before matching.
+         * This is applied to BOTH files' key column values during normalizeKey.
+         */
+        const cleanValue = (val) => {
+            let v = val === null || val === undefined ? '' : String(val);
+            if (cleanTrim.checked)  v = v.trim();
+            if (cleanCase.checked)  v = v.toUpperCase();
+            if (cleanZeros.checked) v = v.replace(/^0+(?=\S)/, '');
+            return v;
+        };
+
+        /**
+         * Apply trim to ALL cells in a dataset (not just the key).
+         * Only runs if cleanTrim is checked.
+         */
+        const cleanDataset = (data) => {
+            if (!cleanTrim.checked) return data;
+            return data.map(row => {
+                const cleaned = {};
+                Object.keys(row).forEach(k => {
+                    const v = row[k];
+                    cleaned[k] = typeof v === 'string' ? v.trim() : v;
+                });
+                return cleaned;
+            });
+        };
+
+
+        // ============================================================
+        //  DOWNLOAD FORMAT SWITCHER
+        // ============================================================
+        const buildBlob = (fmt) => {
+            if (!lastFinalData || !lastFinalHeaders) return null;
+            if (fmt === 'csv') {
+                // Build CSV manually for full control
+                const escape = (v) => {
+                    const s = v === null || v === undefined ? '' : String(v);
+                    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+                        return `"${s.replace(/"/g, '""')}"`;
+                    }
+                    return s;
+                };
+                const rows = [
+                    lastFinalHeaders.map(escape).join(','),
+                    ...lastFinalData.map(row => lastFinalHeaders.map(h => escape(row[h])).join(','))
+                ];
+                return new Blob(['\uFEFF' + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            } else {
+                const ws = XLSX.utils.json_to_sheet(lastFinalData, { header: lastFinalHeaders });
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'VLOOKUP_Result');
+                const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                return new Blob([out], { type: 'application/octet-stream' });
+            }
+        };
+
+        const applyFormat = (fmt) => {
+            currentFormat = fmt;
+            // Update button label
+            downloadFormatBtn.querySelector('.fmt-label').textContent = fmt.toUpperCase();
+            downloadFormatMenu.classList.add('hidden');
+            // Re-generate download if we already have result data
+            if (lastFinalData) {
+                const blob = buildBlob(fmt);
+                if (!blob) return;
+                if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+                currentBlobUrl = URL.createObjectURL(blob);
+                const ext  = fmt === 'csv' ? '.csv' : '.xlsx';
+                activateDownloadButton(currentBlobUrl, lastBaseName + '_vlookup' + ext);
+            }
+        };
+
+        // Toggle format dropdown
+        downloadFormatBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadFormatMenu.classList.toggle('hidden');
+        });
+
+        downloadFormatMenu.addEventListener('click', (e) => {
+            const opt = e.target.closest('.fmt-option');
+            if (opt) applyFormat(opt.dataset.fmt);
+        });
+
+        // Close dropdown on outside click
+        document.addEventListener('click', () => downloadFormatMenu.classList.add('hidden'));
+
+
+        // ============================================================
+        //  DATA PREVIEW PANEL
+        // ============================================================
+        let activePreviewFile = 1; // which tab is active
+
+        const renderPreviewTable = (fileNum) => {
+            const data   = fileNum === 1 ? file1Data   : file2Data;
+            const fname  = fileNum === 1 ? file1NameEl.textContent : file2NameEl.textContent;
+            const rows   = data.slice(0, 10);
+            const total  = data.length;
+
+            if (!rows.length) return;
+
+            const headers = Object.keys(rows[0]);
+
+            previewTitle.textContent    = `Data Preview — ${fname}`;
+            previewSubtitle.textContent = `${headers.length} columns · ${total.toLocaleString()} rows total`;
+            previewRowInfo.textContent  = `Showing 10 of ${total.toLocaleString()} rows`;
+
+            previewThead.innerHTML = `<tr>${headers.map(h =>
+                `<th title="${escapeAttr(h)}">${escapeAttr(h)}</th>`
+            ).join('')}</tr>`;
+
+            previewTbody.innerHTML = rows.map(row =>
+                `<tr>${headers.map(h => {
+                    const val = row[h] === undefined || row[h] === null ? '' : String(row[h]);
+                    return `<td title="${escapeAttr(val)}">${escapeAttr(val) || '<span class=\'text-slate-300\'>—</span>'}</td>`;
+                }).join('')}</tr>`
+            ).join('');
+        };
+
+        const openPreview = (fileNum) => {
+            activePreviewFile = fileNum;
+            // Sync tab styles
+            previewTabs.forEach(t => {
+                t.classList.toggle('active', parseInt(t.dataset.file) === fileNum);
+                // Disable tab if that file isn't loaded yet
+                const isEmpty = (parseInt(t.dataset.file) === 1 ? file1Data : file2Data).length === 0;
+                t.disabled = isEmpty;
+                t.style.opacity = isEmpty ? '0.4' : '1';
+            });
+            renderPreviewTable(fileNum);
+            previewPanel.classList.remove('hidden');
+        };
+
+        previewCloseBtn.addEventListener('click', () => previewPanel.classList.add('hidden'));
+        previewPanel.addEventListener('click', (e) => { if (e.target === previewPanel) previewPanel.classList.add('hidden'); });
+
+        previewTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const fn = parseInt(tab.dataset.file);
+                if ((fn === 1 ? file1Data : file2Data).length === 0) return;
+                activePreviewFile = fn;
+                openPreview(fn);
+            });
+        });
+
+        previewBtn1.addEventListener('click', () => openPreview(1));
+        previewBtn2.addEventListener('click', () => openPreview(2));
+
+        // Show preview buttons once files are loaded
+        const refreshPreviewButtons = () => {
+            previewBtn1.classList.toggle('visible', file1Data.length > 0);
+            previewBtn2.classList.toggle('visible', file2Data.length > 0);
+        };
+
+
+        // ============================================================
+        //  MATCH REPORT MODAL
+        // ============================================================
+        /**
+         * reportData shape:
+         * {
+         *   totalDest   : number,   // rows in destination file
+         *   totalLookup : number,   // rows in lookup file
+         *   matched     : number,   // rows that found a match
+         *   unmatched   : number,   // dest rows with no match
+         *   missedKeys  : string[], // first N unmatched keys
+         *   mappingsUsed: number,   // column mappings applied
+         *   keyColumn   : string
+         * }
+         */
+        const showMatchReport = (reportData) => {
+            const { totalDest, totalLookup, matched, unmatched, missedKeys, mappingsUsed, keyColumn } = reportData;
+            const matchPct = totalDest > 0 ? Math.round((matched / totalDest) * 100) : 0;
+            const coverPct = 100 - matchPct;
+
+            // Color logic
+            const matchColor  = matchPct >= 80 ? '#16a34a' : matchPct >= 50 ? '#d97706' : '#dc2626';
+            const matchBg     = matchPct >= 80 ? '#f0fdf4' : matchPct >= 50 ? '#fffbeb' : '#fef2f2';
+            const unmatchColor = unmatched === 0 ? '#16a34a' : '#dc2626';
+            const unmatchBg    = unmatched === 0 ? '#f0fdf4' : '#fef2f2';
+
+            // Mini donut SVG  (just a simple arc for visual impact)
+            const r = 40, cx = 50, cy = 50;
+            const circ = 2 * Math.PI * r;
+            const matchDash = (matched / (totalDest || 1)) * circ;
+
+            const missedSection = missedKeys.length > 0 ? `
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-slate-700 mb-2">
+                        Unmatched keys in Destination
+                        <span class="text-xs font-normal text-slate-400">(first ${missedKeys.length} shown)</span>
+                    </p>
+                    <div class="p-3 bg-red-50 border border-red-200 rounded-lg max-h-36 overflow-y-auto">
+                        ${missedKeys.map(k => `<span class="miss-key-badge">${escapeAttr(String(k))}</span>`).join('')}
+                    </div>
+                </div>` : `
+                <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                    <span class="text-green-700 font-semibold text-sm">✅ All destination rows were matched!</span>
+                </div>`;
+
+            reportBody.innerHTML = `
+                <!-- Stat cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                    <div class="stat-card" style="background:${matchBg};">
+                        <div class="stat-num" style="color:${matchColor}">${matched.toLocaleString()}</div>
+                        <div class="stat-lbl" style="color:${matchColor}">Matched</div>
+                    </div>
+                    <div class="stat-card" style="background:${unmatchBg};">
+                        <div class="stat-num" style="color:${unmatchColor}">${unmatched.toLocaleString()}</div>
+                        <div class="stat-lbl" style="color:${unmatchColor}">Unmatched</div>
+                    </div>
+                    <div class="stat-card bg-slate-50">
+                        <div class="stat-num text-slate-700">${totalDest.toLocaleString()}</div>
+                        <div class="stat-lbl text-slate-500">Dest Rows</div>
+                    </div>
+                    <div class="stat-card bg-slate-50">
+                        <div class="stat-num text-slate-700">${totalLookup.toLocaleString()}</div>
+                        <div class="stat-lbl text-slate-500">Lookup Rows</div>
+                    </div>
+                </div>
+
+                <!-- Visual match bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs text-slate-500 mb-1">
+                        <span>Match rate</span>
+                        <span style="color:${matchColor}; font-weight:700">${matchPct}%</span>
+                    </div>
+                    <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-4 rounded-full transition-all duration-700"
+                             style="width:${matchPct}%; background:${matchColor};"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-1">
+                        <span style="color:${matchColor}">${matched.toLocaleString()} matched</span>
+                        <span style="color:${unmatchColor}">${unmatched.toLocaleString()} unmatched</span>
+                    </div>
+                </div>
+
+                <!-- Details row -->
+                <div class="grid grid-cols-2 gap-3 mb-2 text-xs text-slate-600">
+                    <div class="bg-slate-50 rounded-lg p-3">
+                        <span class="font-semibold block text-slate-500 uppercase text-xs tracking-wide mb-1">Key Column</span>
+                        <span class="font-mono font-bold text-slate-800">${escapeAttr(keyColumn)}</span>
+                    </div>
+                    <div class="bg-slate-50 rounded-lg p-3">
+                        <span class="font-semibold block text-slate-500 uppercase text-xs tracking-wide mb-1">Columns Mapped</span>
+                        <span class="font-bold text-slate-800">${mappingsUsed} columns transferred</span>
+                    </div>
+                </div>
+
+                ${missedSection}
+
+                <div class="mt-4 flex justify-end">
+                    <button id="report-close-inner-btn"
+                        class="px-5 py-2 bg-slate-800 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors">
+                        Close
+                    </button>
+                </div>`;
+
+            reportOverlay.classList.remove('hidden');
+
+            document.getElementById('report-close-inner-btn').addEventListener('click', () => {
+                reportOverlay.classList.add('hidden');
+            });
+        };
+
+        reportCloseBtn.addEventListener('click', () => reportOverlay.classList.add('hidden'));
+        reportOverlay.addEventListener('click', (e) => { if (e.target === reportOverlay) reportOverlay.classList.add('hidden'); });
 
 
         // ============================================================
@@ -532,6 +1334,7 @@
             originalFile1Headers = []; originalFile2Headers = [];
             mappings = [];
             smartSyncBlacklist = new Set();
+            refreshPreviewButtons();
             renderAll();
         };
 
@@ -558,11 +1361,16 @@
                 URL.revokeObjectURL(currentBlobUrl);
                 currentBlobUrl = null;
             }
+            lastFinalData = null;
+            lastFinalHeaders = null;
+            lastBaseName = '';
             downloadLink.removeAttribute('href');
             downloadLink.classList.remove('bg-green-600', 'hover:bg-green-700');
             downloadLink.classList.add('bg-gray-400', 'cursor-not-allowed');
             downloadLink.style.pointerEvents = 'none';
             downloadLink.textContent = 'Download File';
+            // Disable the format button too
+            downloadFormatBtn.classList.add('disabled-fmt');
         };
 
         const activateDownloadButton = (url, filename) => {
@@ -571,7 +1379,9 @@
             downloadLink.classList.remove('bg-gray-400', 'cursor-not-allowed');
             downloadLink.classList.add('bg-green-600', 'hover:bg-green-700');
             downloadLink.style.pointerEvents = 'auto';
-            downloadLink.textContent = 'Download VLOOKUP File';
+            downloadLink.textContent = `↓ Download ${currentFormat.toUpperCase()}`;
+            // Enable format switcher
+            downloadFormatBtn.classList.remove('disabled-fmt');
         };
 
         const autoDetectAndMap = async () => {
@@ -871,10 +1681,23 @@
             const commonColumn = commonColumnSelect.value;
             if (!commonColumn) throw new Error("Please select a Key Column for VLOOKUP.");
 
-            // Build lookup map (case-insensitive key)
+            // ── Apply Clean Data to both datasets ──
+            // cleanDataset trims all string cells if trim option is on
+            const src1 = cleanDataset(file1Data);
+            const src2 = cleanDataset(file2Data);
+
+            // Remove empty-key rows from destination if option is on
+            const dest = cleanEmpty.checked
+                ? src1.filter(r => {
+                    const v = r[commonColumn];
+                    return v !== null && v !== undefined && String(v).trim() !== '';
+                  })
+                : src1;
+
+            // Build lookup map — cleanValue applied to both sides during matching
             const lookupMap = new Map();
-            file2Data.forEach(row => {
-                const key = normalizeKey(row[commonColumn]);
+            src2.forEach(row => {
+                const key = cleanValue(normalizeKey(row[commonColumn]));
                 if (key) lookupMap.set(key, row);
             });
 
@@ -894,9 +1717,11 @@
             }
 
             let matchesFound = 0;
-            const resultData = file1Data.map(row1 => {
+            const unmatchedKeys = [];
+            const resultData = dest.map(row1 => {
                 const newRow = { ...row1 };
-                const keyToLookup = normalizeKey(row1[commonColumn]);
+                // Apply cleanValue so "007" matches "7", "abc " matches "ABC", etc.
+                const keyToLookup = cleanValue(normalizeKey(row1[commonColumn]));
 
                 if (keyToLookup) {
                     const matchedRow = lookupMap.get(keyToLookup);
@@ -911,6 +1736,11 @@
                                 }
                             }
                         });
+                    } else {
+                        // Track unmatched — keep first 30 for report display
+                        if (unmatchedKeys.length < 30) {
+                            unmatchedKeys.push(row1[commonColumn]);
+                        }
                     }
                 }
 
@@ -938,10 +1768,26 @@
                 return orderedRow;
             });
 
+            // Store for CSV/XLSX re-export without reprocessing
+            lastFinalData    = finalData;
+            lastFinalHeaders = finalHeaderOrder;
+
             const ws = XLSX.utils.json_to_sheet(finalData, { header: finalHeaderOrder });
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'VLOOKUP_Result');
-            return { workbook: wb, matches: matchesFound };
+            return {
+                workbook    : wb,
+                matches     : matchesFound,
+                reportData  : {
+                    totalDest   : dest.length,
+                    totalLookup : src2.length,
+                    matched     : matchesFound,
+                    unmatched   : dest.length - matchesFound,
+                    missedKeys  : unmatchedKeys,
+                    mappingsUsed: allMappings.length,
+                    keyColumn   : commonColumn
+                }
+            };
         };
 
 
@@ -968,6 +1814,7 @@
                 } else {
                     file1SheetInfo.classList.add('hidden');
                 }
+                refreshPreviewButtons();
                 if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
                 else renderAll();
             } catch (err) {
@@ -979,6 +1826,7 @@
                 file1NameEl.textContent = 'Upload';
                 file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
                 file1SheetInfo.classList.add('hidden');
+                refreshPreviewButtons();
             }
         });
 
@@ -1002,6 +1850,7 @@
                 } else {
                     file2SheetInfo.classList.add('hidden');
                 }
+                refreshPreviewButtons();
                 if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
                 else renderAll();
             } catch (err) {
@@ -1012,6 +1861,7 @@
                 file2NameEl.textContent = 'Upload';
                 file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
                 file2SheetInfo.classList.add('hidden');
+                refreshPreviewButtons();
             }
         });
 
@@ -1063,20 +1913,28 @@
                     return;
                 }
 
-                const wbout = XLSX.write(result.workbook, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                // Store base name for re-export
+                lastBaseName = file1Input.files[0].name.replace(/\.[^/.]+$/, "");
 
-                // FIX #2: Revoke previous Blob URL before creating a new one (memory leak fix)
-                if (currentBlobUrl) {
-                    URL.revokeObjectURL(currentBlobUrl);
-                }
+                // Build blob in current format
+                const blob = buildBlob(currentFormat);
+                if (!blob) throw new Error("Failed to generate output file.");
+
+                // FIX #2: Revoke previous Blob URL before creating a new one
+                if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
                 currentBlobUrl = URL.createObjectURL(blob);
 
-                let baseName = file1Input.files[0].name.replace(/\.[^/.]+$/, "");
-                const fileName = `${baseName}_vlookup.xlsx`;
+                const ext      = currentFormat === 'csv' ? '.csv' : '.xlsx';
+                const fileName = `${lastBaseName}_vlookup${ext}`;
 
                 activateDownloadButton(currentBlobUrl, fileName);
-                showMessage(`Success! ${result.matches} rows updated. Your file is ready for download.`, 'success');
+
+                const cleanMsg = [cleanTrim,cleanCase,cleanZeros,cleanEmpty].some(c=>c.checked)
+                    ? ' · Clean Data applied' : '';
+                showMessage(`✅ Done! ${result.matches} rows matched · File ready to download${cleanMsg}`, 'success');
+
+                // Show the match report modal
+                showMatchReport(result.reportData);
 
             } catch (error) {
                 console.error(error);
@@ -1093,6 +1951,7 @@
         });
 
         // Initialize
+        updateCleanBadge();
         hardReset();
     </script>
 </body>
