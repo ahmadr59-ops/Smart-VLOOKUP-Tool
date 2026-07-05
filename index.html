@@ -216,6 +216,12 @@
         .column-item { padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.875rem; position: relative; }
         .column-item:hover { background-color: #eff6ff; border-color: #93c5fd; }
         .column-item.selected { background-color: #3b82f6; color: white; border-color: #1d4ed8; font-weight: 600; }
+        /* FIX: composite key column chips */
+        .key-col-chip { padding: 0.25rem 0.65rem; border: 1px solid #e5e7eb; border-radius: 9999px; cursor: pointer; font-size: 0.75rem; background: #f9fafb; transition: all 0.15s; color: #374151; }
+        .key-col-chip:hover { background: #eff6ff; border-color: #93c5fd; }
+        .key-col-chip.selected { background: #4f46e5; color: #fff; border-color: #4338ca; font-weight: 600; }
+        .key-col-chip .warn-mark { color: #d97706; font-weight: 700; }
+        .key-col-chip.selected .warn-mark { color: #fde68a; }
         .mapping-tag { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500;}
         .remove-tag-btn { cursor: pointer; }
         .remove-tag-btn:hover { color: #ef4444; }
@@ -351,6 +357,13 @@
         .miss-key-badge {
             display: inline-block; background: #fee2e2; color: #b91c1c;
             border: 1px solid #fca5a5; border-radius: 0.25rem;
+            padding: 0.1rem 0.5rem; font-size: 0.75rem; margin: 0.15rem;
+            font-family: monospace;
+        }
+        /* FIX: duplicate-key badge (distinct amber styling from unmatched-key badge) */
+        .dup-key-badge {
+            display: inline-block; background: #fef3c7; color: #92400e;
+            border: 1px solid #fcd34d; border-radius: 0.25rem;
             padding: 0.1rem 0.5rem; font-size: 0.75rem; margin: 0.15rem;
             font-family: monospace;
         }
@@ -514,7 +527,7 @@
             <div class="flex justify-between items-center">
                 <div>
                     <h1 class="text-3xl font-bold tracking-wider">Smart VLOOKUP Tool</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">v2.2 — CSV Export + Clean Data</p>
+                    <p class="text-xs text-slate-400 mt-0.5">v2.3 — Composite Keys + Duplicate-Key Warnings + Bugfixes</p>
                 </div>
                 <p class="font-dancing-script text-xl text-slate-300">Creator: Ahmad Rezazadeh</p>
             </div>
@@ -556,17 +569,17 @@
                                 </div>
                             </div>
                             <hr>
-                            <!-- Key Column Section -->
+                            <!-- Key Column Section (FIX: supports composite / multi-column keys) -->
                             <div id="key-column-section">
-                                <label for="common-column" class="block text-sm font-medium text-gray-700">Key Column</label>
-                                <select id="common-column" class="mt-1 block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm">
-                                    <option value="">Detecting...</option>
-                                </select>
-                                <p id="key-column-desc" class="mt-2 text-xs text-gray-500">The column used to match rows.</p>
+                                <label class="block text-sm font-medium text-gray-700">Key Column(s)</label>
+                                <div id="key-column-list" class="mt-1 flex flex-wrap gap-1 p-2 border border-gray-300 rounded-md bg-white" style="min-height:2.5rem;">
+                                    <span class="text-xs text-gray-400">Upload files first</span>
+                                </div>
+                                <p id="key-column-desc" class="mt-2 text-xs text-gray-500">Click one or more columns to match rows. Selecting more than one creates a composite key.</p>
                                 <div id="create-key-column-prompt" class="hidden mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-xs">
-                                    <p class="font-semibold text-yellow-800">This key column does not exist in the Source File.</p>
+                                    <p class="font-semibold text-yellow-800" id="create-key-msg">This key column does not exist in the Source File.</p>
                                     <button id="create-key-btn" class="mt-1.5 w-full text-xs font-bold py-1 px-2 rounded bg-yellow-400 hover:bg-yellow-500 text-yellow-900 transition-colors">
-                                        Create Key Column in Output
+                                        Create Key Column(s) in Output
                                     </button>
                                 </div>
                             </div>
@@ -718,7 +731,9 @@
         const file2NameEl         = document.getElementById('file2-name');
         const file1SheetInfo      = document.getElementById('file1-sheet-info');
         const file2SheetInfo      = document.getElementById('file2-sheet-info');
-        const commonColumnSelect  = document.getElementById('common-column');
+        const keyColumnList       = document.getElementById('key-column-list'); // FIX: replaces single-select common-column
+        const createKeyBtn        = document.getElementById('create-key-btn');
+        const createKeyMsg        = document.getElementById('create-key-msg');
         const processBtn          = document.getElementById('process-btn');
         const downloadLink        = document.getElementById('download-link');
         const smartSyncCheckbox   = document.getElementById('smart-sync-checkbox');
@@ -782,6 +797,8 @@
         let mappings = [];
         let stateHistory = [];
         let selectedSourceColumn = null;
+        let keyColumns = []; // FIX: array instead of a single string — supports composite keys
+        const KEY_JOIN_SEPARATOR = '\u241F'; // unlikely to appear in real data, used to join composite key parts
 
         // FIX #2: Track current blob URL to revoke on next generation
         let currentBlobUrl = null;
@@ -916,7 +933,9 @@
 
             if (!rows.length) return;
 
-            const headers = Object.keys(rows[0]);
+            // FIX: build headers from ALL preview rows (not just row 0), so columns
+            // that are empty/missing in the first row still show up correctly.
+            const headers = getAllHeaders(rows);
 
             previewTitle.textContent    = `Data Preview — ${fname}`;
             previewSubtitle.textContent = `${headers.length} columns · ${total.toLocaleString()} rows total`;
@@ -976,17 +995,19 @@
         /**
          * reportData shape:
          * {
-         *   totalDest   : number,   // rows in destination file
-         *   totalLookup : number,   // rows in lookup file
-         *   matched     : number,   // rows that found a match
-         *   unmatched   : number,   // dest rows with no match
-         *   missedKeys  : string[], // first N unmatched keys
-         *   mappingsUsed: number,   // column mappings applied
-         *   keyColumn   : string
+         *   totalDest     : number,   // rows in destination file
+         *   totalLookup   : number,   // rows in lookup file
+         *   matched       : number,   // rows that found a match
+         *   unmatched     : number,   // dest rows with no match
+         *   missedKeys    : string[], // first N unmatched keys
+         *   mappingsUsed  : number,   // column mappings applied
+         *   keyColumn     : string,   // display label (joined for composite keys)
+         *   duplicateCount: number,   // FIX: distinct duplicate keys found in the Lookup File
+         *   duplicateKeys : string[]  // FIX: first N duplicate key values, for display
          * }
          */
         const showMatchReport = (reportData) => {
-            const { totalDest, totalLookup, matched, unmatched, missedKeys, mappingsUsed, keyColumn } = reportData;
+            const { totalDest, totalLookup, matched, unmatched, missedKeys, mappingsUsed, keyColumn, duplicateCount = 0, duplicateKeys = [] } = reportData;
             const matchPct = totalDest > 0 ? Math.round((matched / totalDest) * 100) : 0;
             const coverPct = 100 - matchPct;
 
@@ -1015,6 +1036,25 @@
                     <span class="text-green-700 font-semibold text-sm">✅ All destination rows were matched!</span>
                 </div>`;
 
+            // FIX: duplicate-key warning section — previously duplicate keys in the
+            // Lookup File were silently overwritten with zero indication to the user.
+            const duplicateSection = duplicateCount > 0 ? `
+                <div class="mt-4">
+                    <p class="text-sm font-semibold text-slate-700 mb-2">
+                        ⚠ Duplicate keys in Lookup File
+                        <span class="text-xs font-normal text-slate-400">(first ${duplicateKeys.length} of ${duplicateCount} shown — only the first matching row per key was used)</span>
+                    </p>
+                    <div class="p-3 bg-yellow-100 border border-yellow-300 rounded-lg max-h-36 overflow-y-auto">
+                        ${duplicateKeys.map(k => `<span class="dup-key-badge">${escapeAttr(String(k))}</span>`).join('')}
+                    </div>
+                </div>` : '';
+
+            const dupStatCard = duplicateCount > 0 ? `
+                    <div class="stat-card" style="background:#fef3c7;">
+                        <div class="stat-num" style="color:#92400e">${duplicateCount.toLocaleString()}</div>
+                        <div class="stat-lbl" style="color:#92400e">Dup. Keys</div>
+                    </div>` : '';
+
             reportBody.innerHTML = `
                 <!-- Stat cards -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
@@ -1034,6 +1074,7 @@
                         <div class="stat-num text-slate-700">${totalLookup.toLocaleString()}</div>
                         <div class="stat-lbl text-slate-500">Lookup Rows</div>
                     </div>
+                    ${dupStatCard}
                 </div>
 
                 <!-- Visual match bar -->
@@ -1055,7 +1096,7 @@
                 <!-- Details row -->
                 <div class="grid grid-cols-2 gap-3 mb-2 text-xs text-slate-600">
                     <div class="bg-slate-50 rounded-lg p-3">
-                        <span class="font-semibold block text-slate-500 uppercase text-xs tracking-wide mb-1">Key Column</span>
+                        <span class="font-semibold block text-slate-500 uppercase text-xs tracking-wide mb-1">Key Column(s)</span>
                         <span class="font-mono font-bold text-slate-800">${escapeAttr(keyColumn)}</span>
                     </div>
                     <div class="bg-slate-50 rounded-lg p-3">
@@ -1065,6 +1106,8 @@
                 </div>
 
                 ${missedSection}
+
+                ${duplicateSection}
 
                 <div class="mt-4 flex justify-end">
                     <button id="report-close-inner-btn"
@@ -1142,7 +1185,10 @@
                 reader.onload = async (e) => {
                     try {
                         const data = e.target.result;
-                        const workbook = XLSX.read(data, { type: 'array' });
+                        // FIX: cellDates + raw:false below make sheet_to_json return the
+                        // sheet's formatted display text (e.g. "6/5/2026") instead of a
+                        // raw Excel date serial number like 45123.
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
                         if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
                             reject(new Error("No sheets found in the file."));
@@ -1164,7 +1210,7 @@
                         }
 
                         const worksheet = workbook.Sheets[sheetName];
-                        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false });
                         resolve({ json, sheetName, totalSheets: workbook.SheetNames.length });
 
                     } catch (err) {
@@ -1196,8 +1242,13 @@
         };
 
         const normalizeKey = (key) => {
+            // FIX: this used to force .toLowerCase() unconditionally, which meant
+            // key matching was ALWAYS case-insensitive regardless of the "Normalize
+            // Case" checkbox — the checkbox had zero effect. Case handling now lives
+            // entirely in cleanValue(), driven by the checkbox, matching its label
+            // ("Convert key column values to UPPERCASE before matching").
             if (key === undefined || key === null) return "";
-            return String(key).trim().toLowerCase();
+            return String(key).trim();
         };
 
 
@@ -1292,7 +1343,9 @@
                 file1Headers: [...file1Headers],
                 file2Headers: [...file2Headers],
                 // FIX #6: also save blacklist
-                smartSyncBlacklist: new Set(smartSyncBlacklist)
+                smartSyncBlacklist: new Set(smartSyncBlacklist),
+                // FIX: also save key column selection so undo covers composite-key edits
+                keyColumns: [...keyColumns]
             });
             updateUndoButtonState();
         };
@@ -1304,6 +1357,9 @@
                 file1Headers = lastState.file1Headers;
                 file2Headers = lastState.file2Headers;
                 smartSyncBlacklist = lastState.smartSyncBlacklist;
+                keyColumns = lastState.keyColumns || [];
+                renderKeyColumnList();
+                updateCreateKeyPrompt();
                 renderAll();
                 updateUndoButtonState();
             }
@@ -1326,7 +1382,7 @@
             file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
             file1SheetInfo.classList.add('hidden');
             file2SheetInfo.classList.add('hidden');
-            commonColumnSelect.innerHTML = '<option>Upload files first</option>';
+            keyColumns = [];
             resetDownloadButton();
             resetStateHistory();
             file1Data = []; file2Data = [];
@@ -1335,6 +1391,8 @@
             mappings = [];
             smartSyncBlacklist = new Set();
             refreshPreviewButtons();
+            renderKeyColumnList();
+            updateCreateKeyPrompt();
             renderAll();
         };
 
@@ -1399,6 +1457,10 @@
          */
         const scoreKeyColumnCandidate = (header) => {
             const h = String(header).toLowerCase().trim();
+            // FIX: tokenize instead of substring-matching, so "Kidney Weight" no longer
+            // scores as an ID column just because it contains "id", nor "Turkey" because
+            // it contains "key", nor "Notes" because it contains "no".
+            const tokens = h.split(/[\s_\-\/]+/).filter(Boolean);
             let score = 0;
 
             // Strong ID-like keywords
@@ -1406,14 +1468,12 @@
             // Weak / likely non-key keywords
             const weakKeywords = ['name', 'title', 'description', 'desc', 'address', 'date', 'time', 'price', 'amount', 'qty', 'quantity', 'status', 'note', 'comment'];
 
-            strongKeywords.forEach(kw => {
-                if (h === kw) score += 10;
-                else if (h.includes(kw)) score += 5;
+            if (strongKeywords.includes(h)) score += 10;
+            tokens.forEach(t => {
+                if (strongKeywords.includes(t)) score += 5;
+                if (weakKeywords.includes(t)) score -= 3;
             });
-
-            weakKeywords.forEach(kw => {
-                if (h === kw || h.includes(kw)) score -= 3;
-            });
+            if (weakKeywords.includes(h)) score -= 3;
 
             return score;
         };
@@ -1422,11 +1482,14 @@
             const headers1 = originalFile1Headers;
             const headers2 = originalFile2Headers;
 
-            // Only consider columns that exist in BOTH files
+            // Only consider columns that exist in BOTH files for the DEFAULT suggestion.
+            // (Users can still add a lookup-only column manually via the chip list —
+            // see renderKeyColumnList — which is what makes "Create Key Column" reachable.)
             const commonHeaders = headers1.filter(h => headers2.includes(h));
 
             if (commonHeaders.length === 0) {
-                commonColumnSelect.innerHTML = '<option value="">No common columns found</option>';
+                keyColumns = [];
+                renderKeyColumnList();
                 return;
             }
 
@@ -1434,24 +1497,61 @@
             const scored = commonHeaders.map(h => ({ h, score: scoreKeyColumnCandidate(h) }));
             scored.sort((a, b) => b.score - a.score);
 
-            commonColumnSelect.innerHTML = scored.map(({ h }) =>
-                `<option value="${escapeAttr(h)}">${h}</option>`
-            ).join('');
+            keyColumns = [scored[0].h];
+            renderKeyColumnList();
+        };
 
-            // Best candidate is now first
-            commonColumnSelect.value = scored[0].h;
+        // ============================================================
+        //  FIX: COMPOSITE KEY COLUMN UI
+        // ============================================================
+        /**
+         * Renders the clickable chip list a user uses to build a key (composite
+         * keys supported — click multiple chips). Candidates come from the Lookup
+         * File's headers, since a key column is only useful if the Lookup File has
+         * values for it. A chip is marked with a ⚠ if that column doesn't exist in
+         * the Source (Destination) File yet — selecting it surfaces the
+         * "Create Key Column(s) in Output" prompt.
+         */
+        const renderKeyColumnList = () => {
+            if (originalFile1Headers.length === 0 || originalFile2Headers.length === 0) {
+                keyColumnList.innerHTML = '<span class="text-xs text-gray-400">Upload files first</span>';
+                return;
+            }
+            if (originalFile2Headers.length === 0) {
+                keyColumnList.innerHTML = '<span class="text-xs text-gray-400">No columns available in Lookup File</span>';
+                return;
+            }
+            keyColumnList.innerHTML = originalFile2Headers.map(h => {
+                const inDest = originalFile1Headers.includes(h);
+                const isSelected = keyColumns.includes(h);
+                return `<button type="button" class="key-col-chip ${isSelected ? 'selected' : ''}" data-col="${escapeAttr(h)}" title="${inDest ? 'Present in both files' : 'Missing from the Source File — selecting it will let you create it'}">${escapeAttr(h)}${inDest ? '' : ' <span class="warn-mark">⚠</span>'}</button>`;
+            }).join('');
+        };
+
+        /** Shows/hides the "Create Key Column(s)" prompt based on missing columns. */
+        const updateCreateKeyPrompt = () => {
+            const missing = keyColumns.filter(k => !file1Headers.includes(k));
+            if (keyColumns.length === 0 || missing.length === 0) {
+                createKeyColumnPrompt.classList.add('hidden');
+                return;
+            }
+            createKeyMsg.textContent = missing.length === 1
+                ? `The key column "${missing[0]}" does not exist in the Source File.`
+                : `These key columns do not exist in the Source File: ${missing.join(', ')}`;
+            createKeyColumnPrompt.classList.remove('hidden');
         };
 
         const handleKeyColumnChange = () => {
-            const selectedKey = commonColumnSelect.value;
-            createKeyColumnPrompt.classList.toggle('hidden', !selectedKey || originalFile1Headers.includes(selectedKey));
+            renderKeyColumnList();
+            updateCreateKeyPrompt();
             mappings = mappings.filter(m => !m.auto);
             autoMapColumns();
             renderAll();
         };
 
         const autoMapColumns = () => {
-            const commonColumn = commonColumnSelect.value;
+            // FIX: keyColumns is now an array (composite key support) — exclude ALL
+            // selected key columns from auto-mapping, not just a single one.
             const sourcePool = file2Headers;
             const destPool = file1Headers;
 
@@ -1462,7 +1562,8 @@
                 );
                 if (matchingDestHeader) {
                     const isSourceMapped = mappings.some(m => m.source === sh);
-                    if (!isSourceMapped && normalizeKey(matchingDestHeader) !== normalizeKey(commonColumn)) {
+                    const isKeyColumn = keyColumns.some(k => normalizeKey(k) === normalizeKey(matchingDestHeader));
+                    if (!isSourceMapped && !isKeyColumn) {
                         mappings.push({ source: sh, destination: matchingDestHeader, auto: true });
                     }
                 }
@@ -1623,7 +1724,7 @@
                 const sortableInstance = Sortable.get(columnArranger);
                 if (sortableInstance) sortableInstance.destroy();
 
-                const commonColumn = commonColumnSelect.value;
+                // FIX: keyColumns is now an array (composite key support)
                 let finalHeadersSet = new Set(file1Headers);
                 mappings.forEach(m => finalHeadersSet.add(m.destination));
 
@@ -1631,7 +1732,7 @@
                     const mappedSourceCols = new Set(mappings.map(m => m.source));
                     file2Headers.forEach(lookupHeader => {
                         // FIX #6: Respect blacklist — don't auto-add blacklisted columns
-                        if (lookupHeader !== commonColumn
+                        if (!keyColumns.includes(lookupHeader)
                             && !mappedSourceCols.has(lookupHeader)
                             && !smartSyncBlacklist.has(lookupHeader)) {
                             finalHeadersSet.add(lookupHeader);
@@ -1639,9 +1740,11 @@
                     });
                 }
 
-                if (commonColumn && !finalHeadersSet.has(commonColumn) && !file1Headers.includes(commonColumn)) {
-                    finalHeadersSet.add(commonColumn);
-                }
+                keyColumns.forEach(kc => {
+                    if (kc && !finalHeadersSet.has(kc) && !file1Headers.includes(kc)) {
+                        finalHeadersSet.add(kc);
+                    }
+                });
 
                 const finalHeaderArray = [...finalHeadersSet];
 
@@ -1677,32 +1780,63 @@
         // ============================================================
         //  VLOOKUP PROCESSING
         // ============================================================
+        /**
+         * FIX: builds the (possibly composite) key for a row.
+         * Returns null if ANY part of the key is empty — a partial composite key
+         * is treated as "no key", the same way a single empty key was before.
+         */
+        const buildRowKey = (row) => {
+            const parts = keyColumns.map(k => cleanValue(normalizeKey(row[k])));
+            if (parts.some(p => p === '')) return null;
+            return parts.join(KEY_JOIN_SEPARATOR);
+        };
+
+        /** Human-readable version of a row's key columns, for report/warning display. */
+        const displayRowKey = (row) => keyColumns.map(k => row[k]).join(' | ');
+
         const processVlookup = () => {
-            const commonColumn = commonColumnSelect.value;
-            if (!commonColumn) throw new Error("Please select a Key Column for VLOOKUP.");
+            if (keyColumns.length === 0) throw new Error("Please select at least one Key Column for VLOOKUP.");
 
             // ── Apply Clean Data to both datasets ──
             // cleanDataset trims all string cells if trim option is on
             const src1 = cleanDataset(file1Data);
             const src2 = cleanDataset(file2Data);
 
-            // Remove empty-key rows from destination if option is on
+            // Remove rows from destination where any part of the (composite) key is empty, if option is on
             const dest = cleanEmpty.checked
-                ? src1.filter(r => {
-                    const v = r[commonColumn];
-                    return v !== null && v !== undefined && String(v).trim() !== '';
-                  })
+                ? src1.filter(r => buildRowKey(r) !== null)
                 : src1;
 
-            // Build lookup map — cleanValue applied to both sides during matching
+            // Build lookup map — cleanValue applied to both sides during matching.
+            // FIX: also track duplicate keys in the Lookup File so we can warn about them —
+            // previously a duplicate silently overwrote the earlier row with no indication.
             const lookupMap = new Map();
+            const duplicateKeySet = new Set();
             src2.forEach(row => {
-                const key = cleanValue(normalizeKey(row[commonColumn]));
-                if (key) lookupMap.set(key, row);
+                const key = buildRowKey(row);
+                if (!key) return;
+                if (lookupMap.has(key)) {
+                    duplicateKeySet.add(key);
+                } else {
+                    lookupMap.set(key, row);
+                }
             });
+            // Build a display-friendly list of duplicate keys (first 30) for the report
+            const duplicateKeysDisplay = [];
+            if (duplicateKeySet.size > 0) {
+                const seenDisplay = new Set();
+                for (const row of src2) {
+                    const key = buildRowKey(row);
+                    if (key && duplicateKeySet.has(key) && !seenDisplay.has(key)) {
+                        seenDisplay.add(key);
+                        duplicateKeysDisplay.push(displayRowKey(row));
+                        if (duplicateKeysDisplay.length >= 30) break;
+                    }
+                }
+            }
 
             if (lookupMap.size === 0) {
-                throw new Error("No valid (non-empty) keys found in the Lookup File's key column.");
+                throw new Error("No valid (non-empty) keys found in the Lookup File's key column(s).");
             }
 
             let allMappings = [...mappings];
@@ -1710,7 +1844,8 @@
                 const mappedSources = new Set(allMappings.map(m => m.source));
                 file2Headers.forEach(h2 => {
                     // FIX #6: Skip blacklisted columns in Smart Sync processing
-                    if (h2 !== commonColumn && !mappedSources.has(h2) && !smartSyncBlacklist.has(h2)) {
+                    // FIX: exclude ALL key columns (composite), not just a single one
+                    if (!keyColumns.includes(h2) && !mappedSources.has(h2) && !smartSyncBlacklist.has(h2)) {
                         allMappings.push({ source: h2, destination: h2, auto: true });
                     }
                 });
@@ -1721,7 +1856,7 @@
             const resultData = dest.map(row1 => {
                 const newRow = { ...row1 };
                 // Apply cleanValue so "007" matches "7", "abc " matches "ABC", etc.
-                const keyToLookup = cleanValue(normalizeKey(row1[commonColumn]));
+                const keyToLookup = buildRowKey(row1);
 
                 if (keyToLookup) {
                     const matchedRow = lookupMap.get(keyToLookup);
@@ -1739,7 +1874,7 @@
                     } else {
                         // Track unmatched — keep first 30 for report display
                         if (unmatchedKeys.length < 30) {
-                            unmatchedKeys.push(row1[commonColumn]);
+                            unmatchedKeys.push(displayRowKey(row1));
                         }
                     }
                 }
@@ -1779,13 +1914,15 @@
                 workbook    : wb,
                 matches     : matchesFound,
                 reportData  : {
-                    totalDest   : dest.length,
-                    totalLookup : src2.length,
-                    matched     : matchesFound,
-                    unmatched   : dest.length - matchesFound,
-                    missedKeys  : unmatchedKeys,
-                    mappingsUsed: allMappings.length,
-                    keyColumn   : commonColumn
+                    totalDest    : dest.length,
+                    totalLookup  : src2.length,
+                    matched      : matchesFound,
+                    unmatched    : dest.length - matchesFound,
+                    missedKeys   : unmatchedKeys,
+                    mappingsUsed : allMappings.length,
+                    keyColumn    : keyColumns.join(' + '),
+                    duplicateCount: duplicateKeySet.size,
+                    duplicateKeys : duplicateKeysDisplay
                 }
             };
         };
@@ -1865,9 +2002,38 @@
             }
         });
 
-        commonColumnSelect.addEventListener('change', () => {
-            resetStateHistory();
+        // FIX: composite key chip toggling (click to add/remove a column from the key).
+        // Uses saveCurrentState (like other toggles) so this is undoable, instead of the
+        // old behavior of wiping the entire undo history on every key column change.
+        keyColumnList.addEventListener('click', (e) => {
+            const chip = e.target.closest('.key-col-chip');
+            if (!chip) return;
+            saveCurrentState();
+            const col = chip.dataset.col;
+            if (keyColumns.includes(col)) {
+                keyColumns = keyColumns.filter(c => c !== col);
+            } else {
+                keyColumns.push(col);
+            }
             handleKeyColumnChange();
+        });
+
+        // FIX: this button previously had no event listener at all — clicking it did
+        // nothing. It now actually creates the missing key column(s) in the Source
+        // File's output headers (as empty cells), so they can be arranged/filled in.
+        createKeyBtn.addEventListener('click', () => {
+            saveCurrentState();
+            const missing = keyColumns.filter(k => !file1Headers.includes(k));
+            missing.forEach(col => {
+                if (!file1Headers.includes(col)) file1Headers.push(col);
+                if (!originalFile1Headers.includes(col)) originalFile1Headers.push(col);
+            });
+            file1Data = file1Data.map(row => {
+                missing.forEach(col => { if (!(col in row)) row[col] = ''; });
+                return row;
+            });
+            updateCreateKeyPrompt();
+            renderAll();
         });
 
         document.getElementById('visual-mapper').addEventListener('click', handleVisualMapperClick);
