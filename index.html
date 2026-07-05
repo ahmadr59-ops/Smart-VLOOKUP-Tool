@@ -324,16 +324,6 @@
         }
         .sheet-option-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
 
-        /* FIX: Blacklist toggle for smart sync columns */
-        .blacklist-toggle {
-            display: inline-flex; align-items: center; gap: 0.4rem;
-            font-size: 0.7rem; cursor: pointer; padding: 0.1rem 0.4rem;
-            border-radius: 9999px; border: 1px solid #d1d5db;
-            background: #f9fafb; color: #6b7280; margin-left: 0.25rem;
-            transition: all 0.15s; vertical-align: middle;
-        }
-        .blacklist-toggle:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
-        .blacklist-toggle.blacklisted { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
 
         /* ── Data Preview Panel ── */
         #preview-panel {
@@ -509,6 +499,35 @@
             font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em;
             writing-mode: vertical-rl; transform: rotate(180deg);
         }
+        /* FIX: this is the actual, defined replacement for the old 'bg-green-600' /
+           'hover:bg-green-700' classes that were referenced in JS but never styled
+           anywhere — meaning the "ready to download" button had no background at all. */
+        #download-link.download-ready { background-color: var(--success); }
+        #download-link.download-ready:hover { background-color: #156b3a; }
+
+        /* FIX: info-icon + popover — replaces always-visible instructional paragraphs.
+           Click the small "i" to see the explanation; click elsewhere to close it. */
+        .info-icon {
+            width: 1.05rem; height: 1.05rem; border-radius: 9999px;
+            background: var(--border); color: var(--text-secondary);
+            font-size: 0.65rem; font-weight: 700; font-style: italic;
+            display: inline-flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; flex-shrink: 0; font-family: Georgia, 'Times New Roman', serif;
+            transition: all 0.15s; padding: 0; line-height: 1;
+        }
+        .info-icon:hover, .info-icon.open { background: var(--accent); color: white; }
+        .info-popover-wrap { position: relative; display: inline-flex; }
+        .info-popover {
+            display: none;
+            position: absolute; top: 1.5rem; left: 0; z-index: 60;
+            background: var(--ink); color: rgba(255,255,255,0.92);
+            padding: 0.65rem 0.8rem; border-radius: var(--radius-md);
+            font-size: 0.72rem; line-height: 1.55; width: 250px;
+            box-shadow: var(--shadow-raised); font-weight: 400;
+            text-transform: none; letter-spacing: normal;
+        }
+        .info-popover.open { display: block; }
+        .info-popover strong { color: white; }
 
         /* ── Clean data badge on process button ── */
         #clean-active-badge {
@@ -617,7 +636,7 @@
                                 <div>
                                     <label id="file2-label" class="block text-sm font-medium text-gray-700 mb-1">Lookup File (Source)</label>
                                     <label for="file2" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                        <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg><span id="file2-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
+                                        <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file2-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
                                     </label>
                                     <input id="file2" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file2-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
@@ -629,11 +648,16 @@
                             <hr>
                             <!-- Key Column Section (FIX: supports composite / multi-column keys) -->
                             <div id="key-column-section">
-                                <label class="block text-sm font-medium text-gray-700">Key Column(s)</label>
+                                <div style="display:flex; align-items:center; gap:0.4rem;">
+                                    <label class="block text-sm font-medium text-gray-700">Key Column(s)</label>
+                                    <div class="info-popover-wrap">
+                                        <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                        <div class="info-popover">Click one or more columns to match rows. Selecting more than one creates a composite key. A <strong style="color:#f7c873;">⚠</strong> means that column only exists in the Lookup File — pick it and you'll get an option below to add it as a new, empty column in the Source File.</div>
+                                    </div>
+                                </div>
                                 <div id="key-column-list" class="mt-1 flex flex-wrap gap-1 p-2 border border-gray-300 rounded-md bg-white" style="min-height:2.5rem;">
                                     <span class="text-xs text-gray-400">Upload files first</span>
                                 </div>
-                                <p id="key-column-desc" class="mt-2 text-xs" style="color:var(--text-secondary); line-height:1.5;">Click one or more columns to match rows. Selecting more than one creates a composite key. A <span style="color:var(--danger); font-weight:700;">⚠</span> means that column only exists in the Lookup File — pick it and you'll get an option below to add it as a new, empty column in the Source File.</p>
                                 <div id="create-key-column-prompt" class="hidden mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-xs">
                                     <p class="font-semibold text-yellow-800" id="create-key-msg">This key column does not exist in the Source File.</p>
                                     <button id="create-key-btn" class="mt-1.5 w-full text-xs font-bold py-1 px-2 rounded bg-yellow-400 hover:bg-yellow-500 text-yellow-900 transition-colors">
@@ -643,13 +667,16 @@
                             </div>
                             <hr>
                              <!-- Smart Sync -->
-                             <div id="vlookup-options" class="relative flex items-start">
+                             <div id="vlookup-options" class="relative flex items-center">
                                 <div class="flex h-6 items-center">
                                     <input id="smart-sync-checkbox" name="smart-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" style="accent-color: var(--accent);" checked>
                                 </div>
-                                <div class="ml-3 text-sm leading-6">
-                                    <label for="smart-sync-checkbox" class="font-medium text-gray-900">Smart Sync</label>
-                                    <p class="text-xs" style="color:var(--text-secondary); line-height:1.5;">When on, every Lookup File column you haven't mapped by hand is still copied into the output under its original name. To leave just one column out, click its ✕ in <strong>Step 3</strong> below instead of turning this off entirely.</p>
+                                <div class="ml-2" style="display:flex; align-items:center; gap:0.4rem;">
+                                    <label for="smart-sync-checkbox" class="font-medium text-gray-900 text-sm">Smart Sync</label>
+                                    <div class="info-popover-wrap">
+                                        <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                        <div class="info-popover">When on, every Lookup File column you haven't mapped by hand is still copied into the output under its original name. To leave just one column out, delete it from the <strong>Lookup File Columns</strong> list on the left instead of turning this off entirely.</div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -735,6 +762,10 @@
                                 <div class="flex items-center gap-2.5">
                                     <span class="step-badge">2</span>
                                     <h2 id="workspace-title" class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Manual Column Mappings</h2>
+                                    <div class="info-popover-wrap">
+                                        <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                        <div class="info-popover">Click a column from the left list, then a column from the right list to create a mapping. Similar names are mapped automatically.</div>
+                                    </div>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <button id="refresh-btn" title="Reset All" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all" style="color:var(--text-secondary); background:var(--surface-alt);">
@@ -749,7 +780,6 @@
                                     </button>
                                 </div>
                             </div>
-                            <p id="workspace-desc" class="text-xs mb-2" style="color:var(--text-secondary);">Click a column from the left list, then a column from the right list to create a mapping. Similar names are mapped automatically.</p>
                             <div id="visual-mapper" class="grid grid-cols-2 gap-4 mt-2">
                                 <div>
                                     <h4 id="lookup-columns-label" class="font-semibold text-sm text-center mb-2" style="color:var(--text-secondary);">Lookup File Columns (Source)</h4>
@@ -761,17 +791,18 @@
                                 </div>
                             </div>
                             <div id="created-mappings-tags" class="mt-4 flex flex-wrap gap-2 min-h-[2rem]"></div>
-                            <!-- FIX #6: Smart Sync blacklisted columns area -->
-                            <div id="smart-sync-blacklist-area" class="hidden mt-2">
-                                <p class="text-xs mb-1" style="color:var(--text-muted);">Excluded from Smart Sync:</p>
-                                <div id="blacklisted-tags" class="flex flex-wrap gap-1"></div>
-                            </div>
                         </div>
                     </div>
                     <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
                         <div id="arrange-columns-step">
-                             <div class="flex items-center gap-2.5 mb-2" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft);"><span class="step-badge">3</span><h2 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Arrange Output Columns</h2></div>
-                            <p class="text-xs mb-2 mt-2" style="color:var(--text-secondary);">Drag the column headers to set their final order.</p>
+                             <div class="flex items-center gap-2.5 mb-2" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft);">
+                                <span class="step-badge">3</span>
+                                <h2 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Arrange Output Columns</h2>
+                                <div class="info-popover-wrap">
+                                    <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                    <div class="info-popover">Drag the column headers below to set their final order in the output file.</div>
+                                </div>
+                             </div>
                             <div id="column-arranger" class="flex flex-nowrap gap-0 overflow-x-auto pb-4 mt-2"></div>
                         </div>
                     </div>
@@ -806,8 +837,6 @@
         const undoBtn             = document.getElementById('undo-btn');
         const refreshBtn          = document.getElementById('refresh-btn');
         const arrangeColumnsStep  = document.getElementById('arrange-columns-step');
-        const blacklistArea       = document.getElementById('smart-sync-blacklist-area');
-        const blacklistedTagsEl   = document.getElementById('blacklisted-tags');
 
         // Clean Data elements
         const cleanDataToggle     = document.getElementById('clean-data-toggle');
@@ -863,9 +892,6 @@
 
         // FIX #2: Track current blob URL to revoke on next generation
         let currentBlobUrl = null;
-
-        // FIX #6: Blacklist for Smart Sync columns
-        let smartSyncBlacklist = new Set();
 
 
         // ============================================================
@@ -1403,8 +1429,6 @@
                 mappings: JSON.parse(JSON.stringify(mappings)),
                 file1Headers: [...file1Headers],
                 file2Headers: [...file2Headers],
-                // FIX #6: also save blacklist
-                smartSyncBlacklist: new Set(smartSyncBlacklist),
                 // FIX: also save key column selection so undo covers composite-key edits
                 keyColumns: [...keyColumns]
             });
@@ -1417,7 +1441,6 @@
                 mappings = lastState.mappings;
                 file1Headers = lastState.file1Headers;
                 file2Headers = lastState.file2Headers;
-                smartSyncBlacklist = lastState.smartSyncBlacklist;
                 keyColumns = lastState.keyColumns || [];
                 renderKeyColumnList();
                 updateCreateKeyPrompt();
@@ -1452,7 +1475,6 @@
             file1Headers = []; file2Headers = [];
             originalFile1Headers = []; originalFile2Headers = [];
             mappings = [];
-            smartSyncBlacklist = new Set();
             refreshPreviewButtons();
             renderKeyColumnList();
             updateCreateKeyPrompt();
@@ -1470,7 +1492,6 @@
             file1Headers = [...originalFile1Headers];
             file2Headers = [...originalFile2Headers];
             mappings = [];
-            smartSyncBlacklist = new Set();
             selectedSourceColumn = null;
             await autoDetectAndMap();
             showMessage('Workspace has been reset.', 'info');
@@ -1486,11 +1507,14 @@
             lastFinalHeaders = null;
             lastBaseName = '';
             downloadLink.removeAttribute('href');
-            downloadLink.classList.remove('bg-green-600', 'hover:bg-green-700');
+            // FIX: this used to toggle 'bg-green-600' / 'hover:bg-green-700' classes that
+            // were never actually defined anywhere in the stylesheet — so the "ready to
+            // download" state had NO background color at all, leaving white icon+text
+            // sitting on a white/transparent background (invisible). Setting the
+            // background directly avoids depending on undefined utility classes.
             downloadLink.classList.add('bg-gray-400', 'cursor-not-allowed');
+            downloadLink.classList.remove('download-ready');
             downloadLink.style.pointerEvents = 'none';
-            // FIX: only update the text span — the old code did downloadLink.textContent = '...'
-            // which silently wiped out any icon markup inside the link every time this ran.
             downloadLinkText.textContent = 'Download File';
             // Disable the format button too
             downloadFormatBtn.classList.add('disabled-fmt');
@@ -1500,9 +1524,10 @@
             downloadLink.href = url;
             downloadLink.setAttribute('download', filename);
             downloadLink.classList.remove('bg-gray-400', 'cursor-not-allowed');
-            downloadLink.classList.add('bg-green-600', 'hover:bg-green-700');
+            // FIX: 'download-ready' is a real, defined CSS class (see stylesheet) —
+            // unlike the old 'bg-green-600'/'hover:bg-green-700' classes it replaces.
+            downloadLink.classList.add('download-ready');
             downloadLink.style.pointerEvents = 'auto';
-            // FIX: same as above — update the text span only, keep the icon intact
             downloadLinkText.textContent = `Download ${currentFormat.toUpperCase()}`;
             // Enable format switcher
             downloadFormatBtn.classList.remove('disabled-fmt');
@@ -1675,9 +1700,6 @@
                 });
                 destinationColumnsList.innerHTML = destHTML;
 
-                // FIX #6: Render Smart Sync blacklist controls
-                renderBlacklistArea();
-
                 setupColumnArranger();
             } catch (error) {
                 console.error("A critical error occurred during rendering:", error);
@@ -1685,40 +1707,11 @@
             }
         };
 
-        // FIX #6: Show blacklisted columns with option to restore them
-        const renderBlacklistArea = () => {
-            if (!smartSyncCheckbox.checked || smartSyncBlacklist.size === 0) {
-                blacklistArea.classList.add('hidden');
-                return;
-            }
-            blacklistArea.classList.remove('hidden');
-            blacklistedTagsEl.innerHTML = [...smartSyncBlacklist].map(col =>
-                `<span class="inline-flex items-center gap-1 text-xs bg-red-50 border border-red-200 text-red-600 px-2 py-0.5 rounded-full">
-                    ${escapeAttr(col)}
-                    <button class="restore-blacklist-btn hover:text-red-900 font-bold" data-col="${escapeAttr(col)}" title="Restore to Smart Sync">&times;</button>
-                </span>`
-            ).join('');
-        };
-
 
         // ============================================================
         //  CLICK HANDLER FOR VISUAL MAPPER
         // ============================================================
         const handleVisualMapperClick = (e) => {
-            // FIX #6: Handle Smart Sync blacklist toggle (exclude from auto-add)
-            const blacklistBtn = e.target.closest('.blacklist-toggle');
-            if (blacklistBtn) {
-                saveCurrentState();
-                const col = blacklistBtn.dataset.col;
-                if (smartSyncBlacklist.has(col)) {
-                    smartSyncBlacklist.delete(col);
-                } else {
-                    smartSyncBlacklist.add(col);
-                }
-                renderAll();
-                return;
-            }
-
             // FIX #1: Delete by column NAME, not stale array index
             const deleteButton = e.target.closest('.delete-col-btn');
             const columnItem = e.target.closest('.column-item');
@@ -1771,16 +1764,6 @@
             }
         };
 
-        // FIX #6: Restore blacklisted column
-        blacklistedTagsEl.addEventListener('click', (e) => {
-            const restoreBtn = e.target.closest('.restore-blacklist-btn');
-            if (restoreBtn) {
-                saveCurrentState();
-                smartSyncBlacklist.delete(restoreBtn.dataset.col);
-                renderAll();
-            }
-        });
-
 
         // ============================================================
         //  COLUMN ARRANGER
@@ -1799,10 +1782,7 @@
                 if (smartSyncCheckbox.checked) {
                     const mappedSourceCols = new Set(mappings.map(m => m.source));
                     file2Headers.forEach(lookupHeader => {
-                        // FIX #6: Respect blacklist — don't auto-add blacklisted columns
-                        if (!keyColumns.includes(lookupHeader)
-                            && !mappedSourceCols.has(lookupHeader)
-                            && !smartSyncBlacklist.has(lookupHeader)) {
+                        if (!keyColumns.includes(lookupHeader) && !mappedSourceCols.has(lookupHeader)) {
                             finalHeadersSet.add(lookupHeader);
                         }
                     });
@@ -1816,23 +1796,14 @@
 
                 const finalHeaderArray = [...finalHeadersSet];
 
-                // FIX #6: Add a blacklist toggle button per Smart Sync column in the arranger
-                const mappedSources = new Set(mappings.map(m => m.source));
-                const isSmartSyncCol = (header) =>
-                    smartSyncCheckbox.checked &&
-                    file2Headers.includes(header) &&
-                    !mappedSources.has(header) &&
-                    !file1Headers.includes(header);
-
+                // FIX: removed the redundant per-column "✕ exclude" toggle that used to
+                // live here — it duplicated (and was less discoverable than) the delete
+                // button already available on each column in the Lookup File Columns list.
+                // To leave a Smart Sync column out entirely, delete it from that list instead.
                 columnArranger.innerHTML = finalHeaderArray.map(header => {
-                    const isSSCol = isSmartSyncCol(header);
-                    const blacklistBtn = isSSCol
-                        ? `<button class="blacklist-toggle ${smartSyncBlacklist.has(header) ? 'blacklisted' : ''}" data-col="${escapeAttr(header)}" title="Exclude from Smart Sync">✕ exclude</button>`
-                        : '';
                     return `<div class="draggable-item">
                         <div class="handle" title="Drag to reorder"><svg class="h-5 w-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg></div>
                         <span>${escapeAttr(header)}</span>
-                        ${blacklistBtn}
                     </div>`;
                 }).join('');
 
@@ -1911,9 +1882,10 @@
             if (smartSyncCheckbox.checked) {
                 const mappedSources = new Set(allMappings.map(m => m.source));
                 file2Headers.forEach(h2 => {
-                    // FIX #6: Skip blacklisted columns in Smart Sync processing
-                    // FIX: exclude ALL key columns (composite), not just a single one
-                    if (!keyColumns.includes(h2) && !mappedSources.has(h2) && !smartSyncBlacklist.has(h2)) {
+                    // FIX: exclude ALL key columns (composite), not just a single one.
+                    // To exclude a specific column from Smart Sync entirely, delete it
+                    // from the Lookup File Columns list instead.
+                    if (!keyColumns.includes(h2) && !mappedSources.has(h2)) {
                         allMappings.push({ source: h2, destination: h2, auto: true });
                     }
                 });
@@ -2184,8 +2156,29 @@
         });
 
         smartSyncCheckbox.addEventListener('change', () => {
-            if (!smartSyncCheckbox.checked) smartSyncBlacklist = new Set();
             renderAll();
+        });
+
+        // ============================================================
+        //  FIX: INFO ICON POPOVERS (replaces always-visible instructional text)
+        // ============================================================
+        document.querySelectorAll('[data-info-toggle]').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const popover = icon.nextElementSibling;
+                const wasOpen = popover.classList.contains('open');
+                // Close any other open popover first
+                document.querySelectorAll('.info-popover.open').forEach(p => p.classList.remove('open'));
+                document.querySelectorAll('.info-icon.open').forEach(i => i.classList.remove('open'));
+                if (!wasOpen) {
+                    popover.classList.add('open');
+                    icon.classList.add('open');
+                }
+            });
+        });
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.info-popover.open').forEach(p => p.classList.remove('open'));
+            document.querySelectorAll('.info-icon.open').forEach(i => i.classList.remove('open'));
         });
 
         // Initialize
