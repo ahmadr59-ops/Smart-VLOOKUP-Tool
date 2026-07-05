@@ -122,8 +122,9 @@
       .text-slate-600   { color:#475569; }
       .text-slate-700   { color:#334155; }
       .text-slate-800   { color:#1e293b; }
-      .text-indigo-600  { color:#4f46e5; }
-      .text-indigo-800  { color:#3730a3; }
+      .text-indigo-600  { color:var(--accent-deep); }
+      .text-indigo-800  { color:var(--accent-deep); }
+      .bg-indigo-100    { background-color:var(--accent-soft); }
       .text-green-700   { color:#15803d; }
       .text-red-600     { color:#dc2626; }
       .text-yellow-800  { color:#92400e; }
@@ -136,7 +137,7 @@
       .bg-slate-200   { background-color:#e2e8f0; }
       .bg-slate-800   { background-color:#1e293b; }
       .bg-gray-400    { background-color:#9ca3af; }
-      .bg-blue-800    { background-color:#1e40af; }
+      .bg-blue-800    { background-color:var(--accent); }
       .bg-green-50    { background-color:#f0fdf4; }
       .bg-red-50      { background-color:#fef2f2; }
       .bg-yellow-100  { background-color:#fef9c3; }
@@ -154,7 +155,7 @@
       .border-yellow-300{ border-color:#fde047; }
 
       /* ── Hover ── */
-      .hover\\:bg-blue-900:hover   { background-color:#1e3a8a; }
+      .hover\\:bg-blue-900:hover   { background-color:var(--accent-deep); }
       .hover\\:bg-slate-300:hover  { background-color:#cbd5e1; }
       .hover\\:bg-slate-700:hover  { background-color:#334155; }
       .hover\\:bg-yellow-500:hover { background-color:#eab308; }
@@ -166,10 +167,10 @@
       .focus\\:outline-none:focus  { outline:none; }
       .focus\\:ring-2:focus        { box-shadow:0 0 0 2px rgba(99,102,241,.5); }
       .focus\\:ring-offset-2:focus { box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(99,102,241,.5); }
-      .focus\\:border-indigo-500:focus { border-color:#6366f1; }
-      .focus\\:ring-blue-500:focus     { box-shadow:0 0 0 3px rgba(59,130,246,.4); }
-      .focus\\:ring-indigo-500:focus   { box-shadow:0 0 0 3px rgba(99,102,241,.4); }
-      .focus\\:ring-indigo-600:focus   { box-shadow:0 0 0 3px rgba(79,70,229,.4); }
+      .focus\\:border-indigo-500:focus { border-color:var(--accent); }
+      .focus\\:ring-blue-500:focus     { box-shadow:0 0 0 3px rgba(192,138,46,.35); }
+      .focus\\:ring-indigo-500:focus   { box-shadow:0 0 0 3px rgba(192,138,46,.35); }
+      .focus\\:ring-indigo-600:focus   { box-shadow:0 0 0 3px rgba(192,138,46,.35); }
       .focus\\:ring-slate-500:focus    { box-shadow:0 0 0 3px rgba(100,116,139,.4); }
 
       /* ── Disabled ── */
@@ -206,22 +207,52 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f1f5f9; }
-        .file-input-label:hover { background-color: #f8fafc; border-color: #3b82f6; }
-        .font-dancing-script { font-family: 'Dancing Script', cursive; }
-        .step-badge { background-color: #1e3a8a; color: white; border-radius: 9999px; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
-        .column-item { padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; text-align: center; font-size: 0.875rem; position: relative; }
-        .column-item:hover { background-color: #eff6ff; border-color: #93c5fd; }
-        .column-item.selected { background-color: #3b82f6; color: white; border-color: #1d4ed8; font-weight: 600; }
+        /* ── Design tokens ── */
+        :root {
+            --ink: #182233;
+            --ink-2: #26344a;
+            --canvas: #eef1f5;
+            --surface: #ffffff;
+            --surface-alt: #f7f8fa;
+            --border: #dde1e8;
+            --border-soft: #e7eaf0;
+            --accent: #c08a2e;
+            --accent-deep: #9c6f21;
+            --accent-soft: #f7ecd8;
+            --text-primary: #1a2332;
+            --text-secondary: #5b6b82;
+            --text-muted: #8a97a8;
+            --success: #1d8348;
+            --danger: #c0392b;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --shadow-card: 0 1px 2px rgba(24,34,51,0.04), 0 1px 8px rgba(24,34,51,0.05);
+            --shadow-raised: 0 4px 16px rgba(24,34,51,0.10), 0 1px 3px rgba(24,34,51,0.08);
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--canvas); color: var(--text-primary); }
+        /* FIX: Setup column used to be 1/4 of the width (huge on wide monitors).
+           Now it's a fixed, sensible sidebar width that only grows on narrow screens. */
+        .app-grid { grid-template-columns: minmax(0, 300px) 1fr; }
+        @media (max-width: 900px) {
+            .app-grid { grid-template-columns: 1fr; }
+        }
+        .font-mono-tool { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+        .file-input-label:hover { background-color: var(--surface-alt); border-color: var(--accent); }
+        .app-signature { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; }
+        .step-badge { background-color: var(--accent); color: white; border-radius: 9999px; width: 1.85rem; height: 1.85rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
+        .column-item { padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; text-align: center; font-size: 0.875rem; position: relative; background: var(--surface); }
+        .column-item:hover { background-color: var(--accent-soft); border-color: var(--accent); }
+        .column-item.selected { background-color: var(--accent); color: white; border-color: var(--accent-deep); font-weight: 600; }
         /* FIX: composite key column chips */
-        .key-col-chip { padding: 0.25rem 0.65rem; border: 1px solid #e5e7eb; border-radius: 9999px; cursor: pointer; font-size: 0.75rem; background: #f9fafb; transition: all 0.15s; color: #374151; }
-        .key-col-chip:hover { background: #eff6ff; border-color: #93c5fd; }
-        .key-col-chip.selected { background: #4f46e5; color: #fff; border-color: #4338ca; font-weight: 600; }
-        .key-col-chip .warn-mark { color: #d97706; font-weight: 700; }
-        .key-col-chip.selected .warn-mark { color: #fde68a; }
+        .key-col-chip { padding: 0.25rem 0.65rem; border: 1px solid var(--border); border-radius: 9999px; cursor: pointer; font-size: 0.75rem; background: var(--surface); transition: all 0.15s; color: var(--text-secondary); }
+        .key-col-chip:hover { background: var(--accent-soft); border-color: var(--accent); }
+        .key-col-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent-deep); font-weight: 600; }
+        .key-col-chip .warn-mark { color: var(--danger); font-weight: 700; }
+        .key-col-chip.selected .warn-mark { color: #fde9c8; }
         .mapping-tag { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500;}
         .remove-tag-btn { cursor: pointer; }
         .remove-tag-btn:hover { color: #ef4444; }
@@ -245,13 +276,13 @@
         }
         .column-item:hover .delete-col-btn { display: inline-flex; }
         .delete-col-btn:hover { background-color: #fecaca; }
-        .draggable-item { padding: 0.75rem 0.5rem; background-color: white; border: 1px solid #d1d5db; border-left-width: 0; cursor: grab; user-select: none; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; height: 180px; width: auto; min-width: 50px; }
-        #column-arranger .draggable-item:first-child { border-left-width: 1px; border-top-left-radius: 0.375rem; border-bottom-left-radius: 0.375rem; }
-        #column-arranger .draggable-item:last-child { border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; }
-        .draggable-item .handle { cursor: grab; color: #9ca3af; width: 100%; text-align: center; padding-bottom: 8px; }
-        .draggable-item span { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 600; color: #374151; text-align: center; }
-        .draggable-item:hover { background-color: #eff6ff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 10; }
-        .sortable-ghost { background-color: #dbeafe; border: 2px dashed #60a5fa; opacity: 0.7; }
+        .draggable-item { padding: 0.75rem 0.5rem; background-color: white; border: 1px solid var(--border); border-left-width: 0; cursor: grab; user-select: none; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; height: 180px; width: auto; min-width: 50px; }
+        #column-arranger .draggable-item:first-child { border-left-width: 1px; border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+        #column-arranger .draggable-item:last-child { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
+        .draggable-item .handle { cursor: grab; color: var(--text-muted); width: 100%; text-align: center; padding-bottom: 8px; }
+        .draggable-item span { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 600; color: var(--text-primary); text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; }
+        .draggable-item:hover { background-color: var(--accent-soft); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(24,34,51,0.10); z-index: 10; }
+        .sortable-ghost { background-color: var(--accent-soft); border: 2px dashed var(--accent); opacity: 0.7; }
 
         /* FIX: Sheet selector modal */
         #sheet-modal-overlay {
@@ -270,7 +301,7 @@
             margin-bottom: 0.4rem; cursor: pointer; transition: all 0.15s;
             font-size: 0.875rem; background: #f9fafb;
         }
-        .sheet-option-btn:hover { background: #eff6ff; border-color: #3b82f6; }
+        .sheet-option-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
 
         /* FIX: Blacklist toggle for smart sync columns */
         .blacklist-toggle {
@@ -299,7 +330,7 @@
         }
         #preview-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 1rem 1.25rem; background: #1e293b; color: white; flex-shrink: 0;
+            padding: 1rem 1.25rem; background: var(--ink); color: white; flex-shrink: 0;
         }
         #preview-tabs { display: flex; gap: 0.5rem; }
         .preview-tab {
@@ -307,7 +338,7 @@
             font-weight: 600; cursor: pointer; transition: all 0.15s; border: none;
             background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7);
         }
-        .preview-tab.active { background: #3b82f6; color: white; }
+        .preview-tab.active { background: var(--accent); color: white; }
         #preview-body { overflow: auto; flex-grow: 1; padding: 0; }
         .preview-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
         .preview-table thead th {
@@ -345,14 +376,14 @@
             box-shadow: 0 25px 60px rgba(0,0,0,0.3); overflow: hidden;
         }
         #report-header {
-            padding: 1rem 1.25rem; background: #1e293b; color: white; flex-shrink: 0;
+            padding: 1rem 1.25rem; background: var(--ink); color: white; flex-shrink: 0;
             display: flex; align-items: center; justify-content: space-between;
         }
         #report-body { overflow-y: auto; flex-grow: 1; padding: 1.25rem; }
         .stat-card {
-            border-radius: 0.5rem; padding: 0.9rem 1.1rem; text-align: center;
+            border-radius: var(--radius-md); padding: 0.9rem 1.1rem; text-align: center;
         }
-        .stat-card .stat-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .stat-card .stat-num { font-size: 2rem; font-weight: 700; line-height: 1; font-family: 'IBM Plex Mono', monospace; }
         .stat-card .stat-lbl { font-size: 0.7rem; font-weight: 600; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
         .miss-key-badge {
             display: inline-block; background: #fee2e2; color: #b91c1c;
@@ -370,66 +401,66 @@
 
         /* ── Preview button below upload ── */
         .preview-btn {
-            margin-top: 0.4rem; width: 100%; padding: 0.3rem;
-            font-size: 0.72rem; font-weight: 600; border-radius: 0.375rem;
-            border: 1px solid #c7d2fe; background: #eef2ff; color: #4338ca;
+            margin-top: 0.4rem; width: 100%; padding: 0.35rem;
+            font-size: 0.72rem; font-weight: 600; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--surface-alt); color: var(--accent-deep);
             cursor: pointer; transition: all 0.15s; display: none;
         }
-        .preview-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+        .preview-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
         .preview-btn.visible { display: block; }
 
         /* ── Clean Data panel ── */
         #clean-data-panel {
-            background: #f8fafc; border: 1px solid #e2e8f0;
-            border-radius: 0.5rem; overflow: hidden;
+            background: var(--surface-alt); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-md); overflow: hidden;
             transition: all 0.2s;
         }
         #clean-data-toggle {
             width: 100%; display: flex; align-items: center; justify-content: space-between;
             padding: 0.6rem 0.75rem; background: none; border: none; cursor: pointer;
-            font-size: 0.8rem; font-weight: 600; color: #475569;
+            font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);
             transition: background 0.15s;
         }
-        #clean-data-toggle:hover { background: #f1f5f9; }
+        #clean-data-toggle:hover { background: var(--border-soft); }
         #clean-data-toggle .chevron {
-            transition: transform 0.2s; font-size: 0.65rem; color: #94a3b8;
+            transition: transform 0.2s; font-size: 0.65rem; color: var(--text-muted);
         }
         #clean-data-toggle.open .chevron { transform: rotate(180deg); }
         #clean-data-body {
-            padding: 0 0.75rem 0.75rem; display: none; border-top: 1px solid #e2e8f0;
+            padding: 0 0.75rem 0.75rem; display: none; border-top: 1px solid var(--border-soft);
         }
         #clean-data-body.open { display: block; }
 
         .clean-option {
             display: flex; align-items: flex-start; gap: 0.6rem;
-            padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9;
+            padding: 0.5rem 0; border-bottom: 1px solid var(--border-soft);
         }
         .clean-option:last-child { border-bottom: none; padding-bottom: 0; }
         .clean-option input[type=checkbox] {
             margin-top: 2px; width: 14px; height: 14px; flex-shrink: 0;
-            accent-color: #4f46e5; cursor: pointer;
+            accent-color: var(--accent); cursor: pointer;
         }
-        .clean-option label { font-size: 0.75rem; color: #374151; cursor: pointer; line-height: 1.4; }
-        .clean-option label strong { display: block; font-weight: 600; color: #1e293b; }
-        .clean-option label span { color: #6b7280; font-size: 0.7rem; }
+        .clean-option label { font-size: 0.75rem; color: var(--text-primary); cursor: pointer; line-height: 1.4; }
+        .clean-option label strong { display: block; font-weight: 600; color: var(--text-primary); }
+        .clean-option label span { color: var(--text-secondary); font-size: 0.7rem; }
 
         /* ── Download split button ── */
         .download-group {
             position: relative; display: flex; width: 100%;
         }
         #download-link {
-            flex: 1; border-radius: 0.5rem 0 0 0.5rem !important;
+            flex: 1; border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
         }
         #download-format-btn {
             flex-shrink: 0; width: 2.4rem;
-            background: #15803d; color: white; border: none;
+            background: #146338; color: white; border: none;
             border-left: 1px solid rgba(255,255,255,0.25);
-            border-radius: 0 0.5rem 0.5rem 0;
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
             cursor: pointer; font-size: 1rem; display: flex;
             align-items: center; justify-content: center;
             transition: background 0.15s;
         }
-        #download-format-btn:hover { background: #166534; }
+        #download-format-btn:hover { background: #0f4d2b; }
         #download-format-btn.disabled-fmt { background: #9ca3af; cursor: not-allowed; pointer-events: none; }
         #download-format-menu {
             position: absolute; bottom: calc(100% + 6px); right: 0;
@@ -521,29 +552,35 @@
         </div>
     </div>
 
-    <div class="w-screen h-screen bg-white flex flex-col">
+    <div class="w-screen h-screen flex flex-col" style="background: var(--canvas);">
         <!-- Header -->
-        <header class="bg-slate-800 text-white p-4 shadow-md flex-shrink-0">
+        <header class="flex-shrink-0" style="background: var(--ink); color: white; padding: 0.9rem 1.5rem; box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 14px rgba(0,0,0,0.18);">
             <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold tracking-wider">Smart VLOOKUP Tool</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">v2.3 — Composite Keys + Duplicate-Key Warnings + Bugfixes</p>
+                <div class="flex items-center gap-3">
+                    <div style="width:2.25rem; height:2.25rem; border-radius:0.5rem; background:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:1.25rem;height:1.25rem;color:var(--ink)" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25" /></svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold" style="font-size:1.35rem; letter-spacing:-0.01em; line-height:1.15;">Smart VLOOKUP Tool</h1>
+                        <p style="font-size:0.7rem; color:rgba(255,255,255,0.45); margin-top:0.1rem;" class="font-mono-tool">v2.3 · Composite Keys · Duplicate-Key Detection</p>
+                    </div>
                 </div>
-                <p class="font-dancing-script text-xl text-slate-300">Creator: Ahmad Rezazadeh</p>
+                <p class="app-signature">Built by Ahmad Rezazadeh</p>
             </div>
         </header>
 
-        <main class="flex-grow p-6 overflow-y-auto">
+        <main class="flex-grow overflow-y-auto" style="padding: 1.5rem;">
             <div id="top-message-area" class="hidden mb-6 p-4 text-center text-white font-semibold rounded-lg"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 h-full">
+            <div style="display:grid; gap:1.5rem; align-items:start; height:100%;" class="app-grid">
                 
                 <!-- Left Column (Controls) -->
-                <div class="lg:col-span-1 h-full">
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4 h-full flex flex-col">
+                <div class="h-full">
+                    <div class="h-full flex flex-col" style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
                         <div class="flex-grow space-y-4">
-                            <div class="flex items-center gap-3"><span class="step-badge">1</span><h3 class="font-semibold text-lg text-slate-700">Setup</h3></div>
+                            <div class="flex items-center gap-2.5" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft); margin-bottom:0.2rem;"><span class="step-badge">1</span><h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Setup</h3></div>
                              <div class="space-y-4">
+
                                 <div>
                                     <label id="file1-label" class="block text-sm font-medium text-gray-700 mb-1">Source File (Destination)</label>
                                     <!-- FIX #3: Shows sheet selector if needed -->
@@ -587,7 +624,7 @@
                              <!-- Smart Sync -->
                              <div id="vlookup-options" class="relative flex items-start">
                                 <div class="flex h-6 items-center">
-                                    <input id="smart-sync-checkbox" name="smart-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" checked>
+                                    <input id="smart-sync-checkbox" name="smart-sync" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" style="accent-color: var(--accent);" checked>
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
                                     <label for="smart-sync-checkbox" class="font-medium text-gray-900">Smart Sync</label>
@@ -601,7 +638,7 @@
                                     <span style="display:flex;align-items:center;gap:0.4rem;">
                                         <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" /></svg>
                                         Clean Data
-                                        <span id="clean-count-badge" style="display:none;background:#4f46e5;color:white;border-radius:9999px;font-size:0.6rem;padding:0 0.35rem;font-weight:700;"></span>
+                                        <span id="clean-count-badge" style="display:none;background:var(--accent);color:white;border-radius:9999px;font-size:0.6rem;padding:0 0.35rem;font-weight:700;"></span>
                                     </span>
                                     <span class="chevron">▼</span>
                                 </button>
@@ -669,49 +706,50 @@
                 </div>
 
                 <!-- Right Column (Workspace) -->
-                <div id="workspace" class="lg:col-span-3 h-full">
-                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4 h-full flex flex-col">
+                <div id="workspace" class="h-full" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
                         <div class="flex-grow flex flex-col">
-                            <div class="flex items-center justify-between gap-3 mb-4">
-                                <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-between gap-3 mb-4" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft);">
+                                <div class="flex items-center gap-2.5">
                                     <span class="step-badge">2</span>
-                                    <h2 id="workspace-title" class="text-xl font-semibold text-slate-700">Manual Column Mappings</h2>
+                                    <h2 id="workspace-title" class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Manual Column Mappings</h2>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button id="refresh-btn" title="Reset All" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all">
+                                    <button id="refresh-btn" title="Reset All" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all" style="color:var(--text-secondary); background:var(--surface-alt);">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 14.23-5.77M20 15a9 9 0 0 1-14.23 5.77" />
                                         </svg>
                                         Reset
                                     </button>
-                                    <button id="undo-btn" title="Undo Last Action" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <button id="undo-btn" title="Undo Last Action" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed" style="color:var(--text-secondary); background:var(--surface-alt);">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6 6m0 0l-6-6m6 6V9a6 6 0 0112 0v3" /></svg>
                                         Undo
                                     </button>
                                 </div>
                             </div>
-                            <p id="workspace-desc" class="text-xs text-gray-500 mb-2">Click a column from the left list, then a column from the right list to create a mapping. Similar names are mapped automatically.</p>
-                            <div id="visual-mapper" class="grid grid-cols-2 gap-4 mt-2 flex-grow">
+                            <p id="workspace-desc" class="text-xs mb-2" style="color:var(--text-secondary);">Click a column from the left list, then a column from the right list to create a mapping. Similar names are mapped automatically.</p>
+                            <div id="visual-mapper" class="grid grid-cols-2 gap-4 mt-2">
                                 <div>
-                                    <h4 id="lookup-columns-label" class="font-semibold text-sm text-center mb-2 text-slate-600">Lookup File Columns (Source)</h4>
-                                    <div id="lookup-columns-list" class="h-full overflow-y-auto p-2 border rounded-md bg-white space-y-1"></div>
+                                    <h4 id="lookup-columns-label" class="font-semibold text-sm text-center mb-2" style="color:var(--text-secondary);">Lookup File Columns (Source)</h4>
+                                    <div id="lookup-columns-list" class="overflow-y-auto p-2 border rounded-md space-y-1" style="background:var(--surface-alt); border-color:var(--border); min-height:8rem; max-height:16rem;"></div>
                                 </div>
                                 <div>
-                                    <h4 id="destination-columns-label" class="font-semibold text-sm text-center mb-2 text-slate-600">Source File Columns (Destination)</h4>
-                                    <div id="destination-columns-list" class="h-full overflow-y-auto p-2 border rounded-md bg-white space-y-1"></div>
+                                    <h4 id="destination-columns-label" class="font-semibold text-sm text-center mb-2" style="color:var(--text-secondary);">Source File Columns (Destination)</h4>
+                                    <div id="destination-columns-list" class="overflow-y-auto p-2 border rounded-md space-y-1" style="background:var(--surface-alt); border-color:var(--border); min-height:8rem; max-height:16rem;"></div>
                                 </div>
                             </div>
                             <div id="created-mappings-tags" class="mt-4 flex flex-wrap gap-2 min-h-[2rem]"></div>
                             <!-- FIX #6: Smart Sync blacklisted columns area -->
                             <div id="smart-sync-blacklist-area" class="hidden mt-2">
-                                <p class="text-xs text-gray-400 mb-1">Excluded from Smart Sync:</p>
+                                <p class="text-xs mb-1" style="color:var(--text-muted);">Excluded from Smart Sync:</p>
                                 <div id="blacklisted-tags" class="flex flex-wrap gap-1"></div>
                             </div>
                         </div>
-                        <hr id="workspace-separator" />
+                    </div>
+                    <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
                         <div id="arrange-columns-step">
-                             <div class="flex items-center gap-3 mb-4"><span class="step-badge">3</span><h2 class="text-xl font-semibold text-slate-700">Arrange Output Columns</h2></div>
-                            <p class="text-xs text-gray-500 mb-2">Drag the column headers to set their final order.</p>
+                             <div class="flex items-center gap-2.5 mb-2" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft);"><span class="step-badge">3</span><h2 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Arrange Output Columns</h2></div>
+                            <p class="text-xs mb-2 mt-2" style="color:var(--text-secondary);">Drag the column headers to set their final order.</p>
                             <div id="column-arranger" class="flex flex-nowrap gap-0 overflow-x-auto pb-4 mt-2"></div>
                         </div>
                     </div>
