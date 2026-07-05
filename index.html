@@ -244,9 +244,29 @@
         .file-input-label:hover { background-color: var(--surface-alt); border-color: var(--accent); }
         .app-signature { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.06em; color: rgba(255,255,255,0.38); text-transform: uppercase; }
         .step-badge { background-color: var(--accent); color: white; border-radius: 9999px; width: 1.85rem; height: 1.85rem; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; }
-        .column-item { padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; text-align: center; font-size: 0.875rem; position: relative; background: var(--surface); }
+        /* FIX: column-item is now a flex row with an always-visible delete button.
+           Previously the × only appeared on :hover and was positioned with a negative
+           offset that overlapped the item above it in the list — depending on exactly
+           where the mouse was, the click could land on the wrong element or nowhere,
+           making the × feel broken for some items. Now it's always in-flow and can't
+           be missed or misclicked, and long column names truncate with an ellipsis
+           instead of pushing the button out of view. */
+        .column-item {
+            padding: 0.35rem 0.45rem 0.35rem 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.875rem;
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+        }
         .column-item:hover { background-color: var(--accent-soft); border-color: var(--accent); }
         .column-item.selected { background-color: var(--accent); color: white; border-color: var(--accent-deep); font-weight: 600; }
+        .column-item-label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
         /* FIX: composite key column chips */
         .key-col-chip { padding: 0.25rem 0.65rem; border: 1px solid var(--border); border-radius: 9999px; cursor: pointer; font-size: 0.75rem; background: var(--surface); transition: all 0.15s; color: var(--text-secondary); }
         .key-col-chip:hover { background: var(--accent-soft); border-color: var(--accent); }
@@ -256,26 +276,27 @@
         .mapping-tag { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 500;}
         .remove-tag-btn { cursor: pointer; }
         .remove-tag-btn:hover { color: #ef4444; }
-        .delete-col-btn { 
-            position: absolute; 
-            top: -8px; 
-            right: -8px; 
-            background-color: #fee2e2; 
-            color: #ef4444; 
-            border-radius: 9999px; 
-            width: 1.5rem; 
-            height: 1.5rem; 
-            display: none;
-            align-items: center; 
+        .delete-col-btn {
+            flex-shrink: 0;
+            position: static;
+            background-color: transparent;
+            color: var(--text-muted);
+            border-radius: 9999px;
+            width: 1.3rem;
+            height: 1.3rem;
+            display: inline-flex;
+            align-items: center;
             justify-content: center;
             font-size: 1rem;
             line-height: 1;
-            border: 1px solid #fca5a5;
-            z-index: 10;
+            border: 1px solid transparent;
+            z-index: 1;
             cursor: pointer;
+            transition: all 0.15s;
         }
-        .column-item:hover .delete-col-btn { display: inline-flex; }
-        .delete-col-btn:hover { background-color: #fecaca; }
+        .delete-col-btn:hover { background-color: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+        .column-item.selected .delete-col-btn { color: rgba(255,255,255,0.75); }
+        .column-item.selected .delete-col-btn:hover { background-color: rgba(255,255,255,0.2); color: #fff; border-color: transparent; }
         .draggable-item { padding: 0.75rem 0.5rem; background-color: white; border: 1px solid var(--border); border-left-width: 0; cursor: grab; user-select: none; transition: all 0.2s ease-in-out; display: flex; flex-direction: column; align-items: center; height: 180px; width: auto; min-width: 50px; }
         #column-arranger .draggable-item:first-child { border-left-width: 1px; border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
         #column-arranger .draggable-item:last-child { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
@@ -452,7 +473,7 @@
             flex: 1; border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
         }
         #download-format-btn {
-            flex-shrink: 0; width: 2.4rem;
+            flex-shrink: 0; width: 2.6rem;
             background: #146338; color: white; border: none;
             border-left: 1px solid rgba(255,255,255,0.25);
             border-radius: 0 var(--radius-md) var(--radius-md) 0;
@@ -483,9 +504,9 @@
         .fmt-badge-xlsx { background: #dcfce7; color: #15803d; }
         .fmt-badge-csv  { background: #e0f2fe; color: #0369a1; }
 
-        /* active format indicator on button */
+        /* active format indicator on button — FIX: was 0.55rem, easy to miss entirely */
         #download-format-btn .fmt-label {
-            font-size: 0.55rem; font-weight: 700; letter-spacing: 0.04em;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em;
             writing-mode: vertical-rl; transform: rotate(180deg);
         }
 
@@ -585,7 +606,7 @@
                                     <label id="file1-label" class="block text-sm font-medium text-gray-700 mb-1">Source File (Destination)</label>
                                     <!-- FIX #3: Shows sheet selector if needed -->
                                     <label for="file1" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                        <div class="flex items-center gap-2"><svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file1-name" class="block text-sm text-gray-600">Upload</span></div>
+                                        <div class="flex items-center gap-2" style="min-width:0; width:100%;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file1-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
                                     </label>
                                     <input id="file1" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file1-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
@@ -596,7 +617,7 @@
                                 <div>
                                     <label id="file2-label" class="block text-sm font-medium text-gray-700 mb-1">Lookup File (Source)</label>
                                     <label for="file2" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                        <div class="flex items-center gap-2"><svg class="mx-auto h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg><span id="file2-name" class="block text-sm text-gray-600">Upload</span></div>
+                                        <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z" /></svg><span id="file2-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
                                     </label>
                                     <input id="file2" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file2-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
@@ -612,7 +633,7 @@
                                 <div id="key-column-list" class="mt-1 flex flex-wrap gap-1 p-2 border border-gray-300 rounded-md bg-white" style="min-height:2.5rem;">
                                     <span class="text-xs text-gray-400">Upload files first</span>
                                 </div>
-                                <p id="key-column-desc" class="mt-2 text-xs text-gray-500">Click one or more columns to match rows. Selecting more than one creates a composite key.</p>
+                                <p id="key-column-desc" class="mt-2 text-xs" style="color:var(--text-secondary); line-height:1.5;">Click one or more columns to match rows. Selecting more than one creates a composite key. A <span style="color:var(--danger); font-weight:700;">⚠</span> means that column only exists in the Lookup File — pick it and you'll get an option below to add it as a new, empty column in the Source File.</p>
                                 <div id="create-key-column-prompt" class="hidden mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-xs">
                                     <p class="font-semibold text-yellow-800" id="create-key-msg">This key column does not exist in the Source File.</p>
                                     <button id="create-key-btn" class="mt-1.5 w-full text-xs font-bold py-1 px-2 rounded bg-yellow-400 hover:bg-yellow-500 text-yellow-900 transition-colors">
@@ -628,7 +649,7 @@
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
                                     <label for="smart-sync-checkbox" class="font-medium text-gray-900">Smart Sync</label>
-                                    <p class="text-gray-500 text-xs">Auto-add unmapped columns. Use ✕ to exclude.</p>
+                                    <p class="text-xs" style="color:var(--text-secondary); line-height:1.5;">When on, every Lookup File column you haven't mapped by hand is still copied into the output under its original name. To leave just one column out, click its ✕ in <strong>Step 3</strong> below instead of turning this off entirely.</p>
                                 </div>
                             </div>
 
@@ -684,8 +705,9 @@
                                 </button>
                                 <!-- Download split button -->
                                 <div class="download-group">
-                                    <a id="download-link" href="#" style="pointer-events:none;" class="w-full text-center items-center justify-center flex bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed transition-colors">
-                                        Download File
+                                    <a id="download-link" href="#" style="pointer-events:none; gap:0.5rem;" class="w-full text-center items-center justify-center flex bg-gray-400 text-white font-medium py-3 px-4 rounded-lg cursor-not-allowed transition-colors">
+                                        <svg id="download-link-icon" xmlns="http://www.w3.org/2000/svg" style="width:1.15rem;height:1.15rem;flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                                        <span id="download-link-text">Download File</span>
                                     </a>
                                     <button id="download-format-btn" class="disabled-fmt" title="Choose format">
                                         <span class="fmt-label">XLSX</span>
@@ -774,6 +796,7 @@
         const createKeyMsg        = document.getElementById('create-key-msg');
         const processBtn          = document.getElementById('process-btn');
         const downloadLink        = document.getElementById('download-link');
+        const downloadLinkText    = document.getElementById('download-link-text'); // FIX: update only this span, never the whole link's innerHTML
         const smartSyncCheckbox   = document.getElementById('smart-sync-checkbox');
         const createKeyColumnPrompt = document.getElementById('create-key-column-prompt');
         const columnArranger      = document.getElementById('column-arranger');
@@ -1415,7 +1438,9 @@
             file1Input.value = '';
             file2Input.value = '';
             file1NameEl.textContent = 'Upload';
+            file1NameEl.title = 'Upload';
             file2NameEl.textContent = 'Upload';
+            file2NameEl.title = 'Upload';
             file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
             file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
             file1SheetInfo.classList.add('hidden');
@@ -1464,7 +1489,9 @@
             downloadLink.classList.remove('bg-green-600', 'hover:bg-green-700');
             downloadLink.classList.add('bg-gray-400', 'cursor-not-allowed');
             downloadLink.style.pointerEvents = 'none';
-            downloadLink.textContent = 'Download File';
+            // FIX: only update the text span — the old code did downloadLink.textContent = '...'
+            // which silently wiped out any icon markup inside the link every time this ran.
+            downloadLinkText.textContent = 'Download File';
             // Disable the format button too
             downloadFormatBtn.classList.add('disabled-fmt');
         };
@@ -1475,7 +1502,8 @@
             downloadLink.classList.remove('bg-gray-400', 'cursor-not-allowed');
             downloadLink.classList.add('bg-green-600', 'hover:bg-green-700');
             downloadLink.style.pointerEvents = 'auto';
-            downloadLink.textContent = `↓ Download ${currentFormat.toUpperCase()}`;
+            // FIX: same as above — update the text span only, keep the icon intact
+            downloadLinkText.textContent = `Download ${currentFormat.toUpperCase()}`;
             // Enable format switcher
             downloadFormatBtn.classList.remove('disabled-fmt');
         };
@@ -1562,7 +1590,7 @@
             keyColumnList.innerHTML = originalFile2Headers.map(h => {
                 const inDest = originalFile1Headers.includes(h);
                 const isSelected = keyColumns.includes(h);
-                return `<button type="button" class="key-col-chip ${isSelected ? 'selected' : ''}" data-col="${escapeAttr(h)}" title="${inDest ? 'Present in both files' : 'Missing from the Source File — selecting it will let you create it'}">${escapeAttr(h)}${inDest ? '' : ' <span class="warn-mark">⚠</span>'}</button>`;
+                return `<button type="button" class="key-col-chip ${isSelected ? 'selected' : ''}" data-col="${escapeAttr(h)}" title="${inDest ? 'Present in both files' : 'This column only exists in the Lookup File. Selecting it lets you add it as an empty column in the Source File.'}">${escapeAttr(h)}${inDest ? '' : ' <span class="warn-mark">⚠</span>'}</button>`;
             }).join('');
         };
 
@@ -1627,9 +1655,11 @@
 
                 // FIX #1: Use column NAME (not index) as the key for delete operations
                 // data-col-name stores the actual column name; index is only for display ordering
+                // FIX: label now sits in its own span so the delete button stays inline,
+                // always visible, and never overlaps a neighboring item.
                 const colItemTemplate = (colName, type) => `
-                    <div class="column-item" data-column-name="${escapeAttr(colName)}" title="Click to select for mapping.">
-                        ${escapeAttr(colName)}
+                    <div class="column-item" data-column-name="${escapeAttr(colName)}" title="${escapeAttr(colName)} — click to select for mapping">
+                        <span class="column-item-label">${escapeAttr(colName)}</span>
                         <button class="delete-col-btn" data-col-type="${type}" data-col-name="${escapeAttr(colName)}" title="Remove column from processing">&times;</button>
                     </div>`;
 
@@ -1973,6 +2003,7 @@
             if (!e.target.files || e.target.files.length === 0) return;
             const fileName = e.target.files[0].name;
             file1NameEl.textContent = fileName;
+            file1NameEl.title = fileName; // FIX: full name visible on hover when truncated
             file1NameEl.classList.add('text-indigo-700', 'font-semibold');
             resetDownloadButton();
             hideMessage();
@@ -1999,6 +2030,7 @@
                 // Reset the file input if cancelled or error
                 file1Input.value = '';
                 file1NameEl.textContent = 'Upload';
+            file1NameEl.title = 'Upload';
                 file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
                 file1SheetInfo.classList.add('hidden');
                 refreshPreviewButtons();
@@ -2009,6 +2041,7 @@
             if (!e.target.files || e.target.files.length === 0) return;
             const fileName = e.target.files[0].name;
             file2NameEl.textContent = fileName;
+            file2NameEl.title = fileName; // FIX: full name visible on hover when truncated
             file2NameEl.classList.add('text-indigo-700', 'font-semibold');
             resetDownloadButton();
             hideMessage();
@@ -2034,6 +2067,7 @@
                 }
                 file2Input.value = '';
                 file2NameEl.textContent = 'Upload';
+            file2NameEl.title = 'Upload';
                 file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
                 file2SheetInfo.classList.add('hidden');
                 refreshPreviewButtons();
