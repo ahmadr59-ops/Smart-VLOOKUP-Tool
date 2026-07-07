@@ -237,8 +237,10 @@
         /* FIX: Setup column used to be 1/4 of the width (huge on wide monitors).
            Now it's a fixed, sensible sidebar width that only grows on narrow screens. */
         .app-grid { grid-template-columns: minmax(0, 300px) 1fr; }
+        .pms-grid { grid-template-columns: minmax(0, 340px) 1fr; }
         @media (max-width: 900px) {
             .app-grid { grid-template-columns: 1fr; }
+            .pms-grid { grid-template-columns: 1fr; }
         }
         .font-mono-tool { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
         .file-input-label:hover { background-color: var(--surface-alt); border-color: var(--accent); }
@@ -529,6 +531,45 @@
         .info-popover.open { display: block; }
         .info-popover strong { color: white; }
 
+        /* FIX: mode tab switcher (VLOOKUP vs Import PMS) */
+        .mode-tab {
+            padding: 0.7rem 1rem; font-size: 0.85rem; font-weight: 600;
+            background: none; border: none; cursor: pointer;
+            color: var(--text-secondary); border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        .mode-tab:hover { color: var(--text-primary); }
+        .mode-tab.active { color: var(--accent-deep); border-bottom-color: var(--accent); }
+
+        /* PMS Import review table */
+        .pms-review-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 1100px; }
+        .pms-review-table thead th {
+            position: sticky; top: 0; background: var(--surface-alt);
+            padding: 0.5rem 0.5rem; text-align: left; border-bottom: 2px solid var(--border);
+            font-weight: 700; color: var(--text-secondary); white-space: nowrap; z-index: 5;
+        }
+        .pms-review-table tbody td { padding: 0.25rem 0.35rem; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+        .pms-review-table tbody tr:nth-child(even) td { background: var(--surface-alt); }
+        .pms-cell-input {
+            width: 100%; min-width: 70px; border: 1px solid transparent; background: transparent;
+            padding: 0.3rem 0.35rem; border-radius: 0.3rem; font-size: 0.78rem; font-family: inherit;
+            color: var(--text-primary); transition: all 0.15s;
+        }
+        .pms-cell-input:hover { border-color: var(--border); }
+        .pms-cell-input:focus { outline: none; border-color: var(--accent); background: white; box-shadow: 0 0 0 2px rgba(192,138,46,0.15); }
+        .pms-cell-input.pms-required-empty { border-color: var(--danger); background: #fef2f2; }
+        .pms-cell-input.pms-desc { min-width: 220px; }
+        .pms-row-delete-btn {
+            width: 1.4rem; height: 1.4rem; border-radius: 9999px; border: none; background: transparent;
+            color: var(--text-muted); cursor: pointer; font-size: 1rem; line-height: 1;
+        }
+        .pms-row-delete-btn:hover { background: #fee2e2; color: #dc2626; }
+        .pms-flag-badge {
+            display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 0.05rem 0.4rem;
+            border-radius: 0.25rem; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+            margin-bottom: 0.2rem;
+        }
+
         /* ── Clean data badge on process button ── */
         #clean-active-badge {
             display: none; font-size: 0.6rem; background: rgba(255,255,255,0.2);
@@ -609,10 +650,16 @@
             </div>
         </header>
 
+        <!-- FIX: mode tab switcher -->
+        <div style="background:var(--surface); border-bottom:1px solid var(--border-soft); padding:0 1.5rem; flex-shrink:0; display:flex; gap:0.25rem;">
+            <button type="button" id="tab-vlookup" class="mode-tab active">VLOOKUP Tool</button>
+            <button type="button" id="tab-pms-import" class="mode-tab">Import PMS → Template</button>
+        </div>
+
         <main class="flex-grow overflow-y-auto" style="padding: 1.5rem;">
             <div id="top-message-area" class="hidden mb-6 p-4 text-center text-white font-semibold rounded-lg"></div>
 
-            <div style="display:grid; gap:1.5rem; align-items:start; height:100%;" class="app-grid">
+            <div id="vlookup-mode" style="display:grid; gap:1.5rem; align-items:start; height:100%;" class="app-grid">
                 
                 <!-- Left Column (Controls) -->
                 <div class="h-full">
@@ -805,6 +852,86 @@
                              </div>
                             <div id="column-arranger" class="flex flex-nowrap gap-0 overflow-x-auto pb-4 mt-2"></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ PMS IMPORT MODE ══ -->
+            <div id="pms-import-mode" style="display:none; grid-template-columns: minmax(0,340px) 1fr; gap:1.5rem; align-items:start;" class="pms-grid">
+
+                <!-- Left: import setup -->
+                <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
+                    <div class="flex items-center gap-2.5" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft); margin-bottom:0.9rem;">
+                        <span class="step-badge">1</span>
+                        <h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Import Setup</h3>
+                        <div class="info-popover-wrap">
+                            <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                            <div class="info-popover">Parses a Line Class Sheet (PMS.xls) and extracts PIPE rows only, one row per size range. Nothing is written until you review and confirm on the right — safety-relevant fields like Joint Type E are always left blank for you to fill in.</div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Source: Line Class Sheet</label>
+                            <label for="pms-source-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-source-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload PMS.xls</span></div>
+                            </label>
+                            <input id="pms-source-file" type="file" class="hidden" accept=".xlsx,.xls,.xlsm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Destination: PMS Template <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
+                            <label for="pms-template-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-template-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload template (or skip)</span></div>
+                            </label>
+                            <input id="pms-template-file" type="file" class="hidden" accept=".xlsx">
+                            <p class="text-xs mt-1" style="color:var(--text-muted);">If you skip this, a fresh template with the standard 11-column header will be created for you.</p>
+                        </div>
+                        <button id="pms-parse-btn" class="w-full flex items-center justify-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm font-medium text-white transition-all duration-300" style="background:var(--accent);" disabled>
+                            Parse Line Class Sheet
+                        </button>
+                        <div id="pms-parse-summary" class="hidden text-xs p-2 rounded-md" style="background:var(--surface-alt); border:1px solid var(--border-soft); line-height:1.6;"></div>
+                    </div>
+                </div>
+
+                <!-- Right: review + export -->
+                <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
+                    <div class="flex items-center justify-between gap-3" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft); margin-bottom:0.9rem;">
+                        <div class="flex items-center gap-2.5">
+                            <span class="step-badge">2</span>
+                            <h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Review Before Export</h3>
+                            <div class="info-popover-wrap">
+                                <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                <div class="info-popover">Every extracted row is editable. Fields shaded red are required and must be filled before exporting — in particular <strong>Joint Type E</strong>, which this tool never guesses.</div>
+                            </div>
+                        </div>
+                        <button id="pms-add-row-btn" class="hidden flex items-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all" style="color:var(--text-secondary); background:var(--surface-alt);">+ Add Row</button>
+                    </div>
+                    <div id="pms-review-empty" class="text-sm text-center" style="color:var(--text-muted); padding:2.5rem 1rem;">Upload a Line Class Sheet on the left and click "Parse" to see extracted rows here.</div>
+                    <div id="pms-review-wrap" class="hidden overflow-x-auto" style="max-height:26rem; overflow-y:auto; border:1px solid var(--border-soft); border-radius:var(--radius-md);">
+                        <table id="pms-review-table" class="pms-review-table">
+                            <thead>
+                                <tr>
+                                    <th>Piping Class</th>
+                                    <th>Size From</th>
+                                    <th>Size To</th>
+                                    <th>Material Spec/Grade</th>
+                                    <th>Joint Type E</th>
+                                    <th>W</th>
+                                    <th>Corr. Allow. (mm)</th>
+                                    <th>Mech. Allow. (mm)</th>
+                                    <th>Mill Undertol. (%)</th>
+                                    <th>Schedule/Rating</th>
+                                    <th>Remarks</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="pms-review-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div id="pms-warnings" class="hidden mt-3 p-3 bg-yellow-100 border border-yellow-300 rounded-md text-xs" style="line-height:1.6;"></div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="pms-export-btn" class="hidden flex items-center justify-center gap-2 py-2.5 px-5 border border-transparent rounded-lg shadow-sm font-medium text-white transition-all duration-300" style="background:var(--success);">
+                            Export Updated Template
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2181,27 +2308,435 @@
             document.querySelectorAll('.info-icon.open').forEach(i => i.classList.remove('open'));
         });
 
+        // ============================================================
+        //  PMS IMPORT — mode tab switcher
+        // ============================================================
+        const tabVlookup      = document.getElementById('tab-vlookup');
+        const tabPmsImport    = document.getElementById('tab-pms-import');
+        const vlookupModeEl   = document.getElementById('vlookup-mode');
+        const pmsImportModeEl = document.getElementById('pms-import-mode');
+
+        tabVlookup.addEventListener('click', () => {
+            tabVlookup.classList.add('active');
+            tabPmsImport.classList.remove('active');
+            vlookupModeEl.style.display = 'grid';
+            pmsImportModeEl.style.display = 'none';
+        });
+        tabPmsImport.addEventListener('click', () => {
+            tabPmsImport.classList.add('active');
+            tabVlookup.classList.remove('active');
+            pmsImportModeEl.style.display = 'grid';
+            vlookupModeEl.style.display = 'none';
+        });
+
+        // ============================================================
+        //  PMS IMPORT — state & element refs
+        // ============================================================
+        const pmsSourceInput    = document.getElementById('pms-source-file');
+        const pmsTemplateInput  = document.getElementById('pms-template-file');
+        const pmsSourceName     = document.getElementById('pms-source-name');
+        const pmsTemplateName   = document.getElementById('pms-template-name');
+        const pmsParseBtn       = document.getElementById('pms-parse-btn');
+        const pmsParseSummary   = document.getElementById('pms-parse-summary');
+        const pmsReviewEmpty    = document.getElementById('pms-review-empty');
+        const pmsReviewWrap     = document.getElementById('pms-review-wrap');
+        const pmsReviewTbody    = document.getElementById('pms-review-tbody');
+        const pmsWarningsEl     = document.getElementById('pms-warnings');
+        const pmsExportBtn      = document.getElementById('pms-export-btn');
+        const pmsAddRowBtn      = document.getElementById('pms-add-row-btn');
+
+        let pmsSourceWorkbook   = null;
+        let pmsTemplateWorkbook = null;
+        // Default header — used only if no destination template is uploaded.
+        // If a template IS uploaded, its own header row (read from the file) is used instead,
+        // so any customization the user made to their template is respected.
+        let pmsTemplateHeaderArray = ["Piping Class", "Size From (NPS)", "Size To (NPS)", "Material Spec/Grade", "Joint Type E", "W", "Corrosion Allowance (mm)", "Mechanical Allowance (mm)", "Mill Undertolerance (%)", "Schedule/Rating (ref.)", "Remarks"];
+
+        const PMS_FIELDS   = ['pipingClass', 'sizeFrom', 'sizeTo', 'materialSpec', 'jointTypeE', 'w', 'corrAllow', 'mechAllow', 'millUndertol', 'schedule', 'remarks'];
+        const PMS_REQUIRED = ['pipingClass', 'sizeFrom', 'sizeTo', 'materialSpec', 'jointTypeE'];
+
+        const readWorkbookFile = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = reject;
+                reader.onload = (e) => {
+                    try {
+                        resolve(XLSX.read(e.target.result, { type: 'array', cellDates: true }));
+                    } catch (err) { reject(err); }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        };
+
+        // ============================================================
+        //  PMS IMPORT — size-token parsing (fractions, mixed numbers, plain)
+        // ============================================================
+        const parsePmsSizeToken = (raw) => {
+            if (raw === null || raw === undefined) return null;
+            let s = String(raw).trim();
+            if (s === '') return null;
+            const fracMap = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875, '⅓': 0.3333, '⅔': 0.6667 };
+            for (const ch of Object.keys(fracMap)) {
+                if (s.includes(ch)) {
+                    const wholePart = s.split(ch)[0].trim();
+                    const whole = wholePart === '' ? 0 : parseFloat(wholePart);
+                    if (isNaN(whole)) return null;
+                    return whole + fracMap[ch];
+                }
+            }
+            const mixedMatch = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+            if (mixedMatch) return parseInt(mixedMatch[1], 10) + (parseInt(mixedMatch[2], 10) / parseInt(mixedMatch[3], 10));
+            const fracMatch = s.match(/^(\d+)\/(\d+)$/);
+            if (fracMatch) return parseInt(fracMatch[1], 10) / parseInt(fracMatch[2], 10);
+            if (/^[\d.]+$/.test(s)) {
+                const num = parseFloat(s);
+                if (!isNaN(num)) return num;
+            }
+            return null;
+        };
+
+        // ============================================================
+        //  PMS IMPORT — heuristic Line Class Sheet parser
+        // ============================================================
+        /**
+         * Parses a PMS.xls-style "Line Class Sheet" workbook. Rather than assuming
+         * fixed cell coordinates (which the user confirmed vary between real files),
+         * this scans for recognizable text labels and structural patterns:
+         *   - "LINE CLASS" label  → Piping Class value (next non-empty cell, same row)
+         *   - "CORROSION ALLOWANCE" label → class-level corrosion allowance (mm)
+         *   - a lone "PIPE" cell  → start of the pipe section (only PIPE rows are extracted,
+         *     per the template's own scope note — fittings/flanges/valves are ignored)
+         *   - the next lone section-label cell (FITTING, FLANGE, ELBOW, TEE, ...) → end of
+         *     the pipe section
+         *   - within the pipe section, a data row is recognized by a "-" cell flanked by
+         *     two non-empty cells (the size range), regardless of which column that falls in
+         * Every extracted row is meant for human review — nothing here is final.
+         */
+        const PMS_SECTION_KEYWORDS = ['PIPE', 'FITTING', 'FLANGE', 'GASKET', 'BOLTING', 'VALVE', 'SUPPORT', 'MISC', 'INSTRUMENT', 'OLET', 'ELBOW', 'TEE', 'REDUCER', 'REDUCING', 'CAP', 'COUPLING', 'UNION', 'NIPPLE', 'STRAINER'];
+
+        const parsePmsWorkbook = (workbook) => {
+            const rows = [];
+            const warnings = [];
+
+            workbook.SheetNames.forEach(sheetName => {
+                const ws = workbook.Sheets[sheetName];
+                const rawGrid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                const grid = rawGrid.map(row => row.map(c => (c === null || c === undefined) ? '' : String(c).trim()));
+
+                // 1. Find every "LINE CLASS" label occurrence — a sheet may stack multiple classes
+                let lineClassMarkers = [];
+                grid.forEach((row, rIdx) => {
+                    row.forEach((cell, cIdx) => {
+                        if (/LINE\s*CLASS/i.test(cell)) lineClassMarkers.push({ rIdx, cIdx });
+                    });
+                });
+                if (lineClassMarkers.length === 0) {
+                    lineClassMarkers.push({ rIdx: -1, cIdx: -1, pipingClass: '' });
+                } else {
+                    // Resolve each marker's class value up front
+                    lineClassMarkers.forEach(m => {
+                        const row = grid[m.rIdx];
+                        m.pipingClass = '';
+                        for (let c = m.cIdx + 1; c < row.length; c++) {
+                            if (row[c] !== '') { m.pipingClass = row[c]; break; }
+                        }
+                    });
+                    // FIX: real Line Class Sheets can repeat the "LINE CLASS:" header block
+                    // partway through (e.g. as a print page-break artifact) WITHOUT it being
+                    // a genuinely new class. Merge consecutive markers that resolve to the same
+                    // class value so the repeat doesn't get treated as its own (empty) block.
+                    lineClassMarkers = lineClassMarkers.filter((m, i) => i === 0 || m.pipingClass !== lineClassMarkers[i - 1].pipingClass || m.pipingClass === '');
+                }
+
+                lineClassMarkers.forEach((marker, blockIdx) => {
+                    const blockStart = marker.rIdx >= 0 ? marker.rIdx : 0;
+                    const blockEnd = (blockIdx + 1 < lineClassMarkers.length) ? lineClassMarkers[blockIdx + 1].rIdx : grid.length;
+
+                    const pipingClass = marker.pipingClass || '';
+                    if (!pipingClass) {
+                        warnings.push(`Sheet "${sheetName}": couldn't detect a Piping Class value${marker.rIdx >= 0 ? ' near row ' + (marker.rIdx + 1) : ''} — left blank, please fill in manually.`);
+                    }
+
+                    // Corrosion allowance: scan block for "CORROSION ALLOWANCE" label
+                    let corrAllow = '';
+                    for (let r = blockStart; r < blockEnd; r++) {
+                        const row = grid[r];
+                        for (let c = 0; c < row.length; c++) {
+                            if (/CORROSION\s*ALLOWANCE/i.test(row[c])) {
+                                for (let c2 = c + 1; c2 < row.length; c2++) {
+                                    if (row[c2] !== '') {
+                                        const m = row[c2].match(/([\d.]+)/);
+                                        if (m) corrAllow = m[1];
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Find the PIPE section: a row with 1-2 non-empty cells, one of which is exactly "PIPE"
+                    let pipeStart = -1, pipeEnd = blockEnd;
+                    for (let r = blockStart; r < blockEnd; r++) {
+                        const row = grid[r];
+                        const nonEmpty = row.map((v, i) => ({ v, i })).filter(x => x.v !== '');
+                        if (nonEmpty.length > 0 && nonEmpty.length <= 2) {
+                            const label = nonEmpty[nonEmpty.length - 1].v.toUpperCase().replace(/[^A-Z]/g, '');
+                            if (pipeStart === -1 && label === 'PIPE') {
+                                pipeStart = r + 1;
+                            } else if (pipeStart !== -1 && PMS_SECTION_KEYWORDS.some(k => label === k)) {
+                                pipeEnd = r;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (pipeStart === -1) {
+                        warnings.push(`Sheet "${sheetName}"${pipingClass ? ' (class ' + pipingClass + ')' : ''}: no "PIPE" section found — skipped. Use "+ Add Row" to enter its data manually if needed.`);
+                        return;
+                    }
+
+                    // Scan rows in the PIPE section for data rows (a "-" cell flanked by two values)
+                    for (let r = pipeStart; r < pipeEnd; r++) {
+                        const row = grid[r];
+                        let dashIdx = -1;
+                        for (let c = 1; c < row.length - 1; c++) {
+                            if (/^[-–—]$/.test(row[c]) && row[c - 1] !== '' && row[c + 1] !== '') { dashIdx = c; break; }
+                        }
+                        if (dashIdx === -1) continue; // not a size-range data row — skip silently (e.g. a note-only row)
+
+                        const fromRaw = row[dashIdx - 1];
+                        const toRaw = row[dashIdx + 1];
+                        const sizeFromParsed = parsePmsSizeToken(fromRaw);
+                        const sizeToParsed = parsePmsSizeToken(toRaw);
+                        const sizeParseFailed = (sizeFromParsed === null || sizeToParsed === null);
+                        if (sizeParseFailed) {
+                            warnings.push(`Sheet "${sheetName}" row ${r + 1}: couldn't confidently parse the size range "${fromRaw} - ${toRaw}" — added with the raw text, please check it.`);
+                        }
+
+                        // Description: the longest text cell in the row, excluding the size/dash columns
+                        let descIdx = -1, descLen = -1;
+                        row.forEach((v, i) => {
+                            if (i === dashIdx || i === dashIdx - 1 || i === dashIdx + 1) return;
+                            if (v.length > descLen) { descLen = v.length; descIdx = i; }
+                        });
+                        const description = descIdx >= 0 ? row[descIdx] : '';
+
+                        // Schedule/Rating: rightmost remaining non-empty cell
+                        let schedule = '';
+                        for (let c = row.length - 1; c >= 0; c--) {
+                            if (c === descIdx || c === dashIdx || c === dashIdx - 1 || c === dashIdx + 1) continue;
+                            if (row[c] !== '') { schedule = row[c]; break; }
+                        }
+
+                        rows.push({
+                            pipingClass,
+                            sizeFrom: sizeFromParsed !== null ? String(sizeFromParsed) : fromRaw,
+                            sizeTo: sizeToParsed !== null ? String(sizeToParsed) : toRaw,
+                            materialSpec: description,
+                            jointTypeE: '', // FIX: never guessed — always left blank for manual engineering entry
+                            w: '1.00',      // stated in the template's own instructions as the usual default; editable
+                            corrAllow: corrAllow,
+                            mechAllow: '',
+                            millUndertol: '',
+                            schedule: schedule,
+                            remarks: description,
+                            _flag: sizeParseFailed ? 'warn' : 'ok'
+                        });
+                    }
+                });
+            });
+
+            return { rows, warnings };
+        };
+
+        // ============================================================
+        //  PMS IMPORT — review table rendering
+        // ============================================================
+        const pmsRowHtml = (r) => `<tr>
+            <td>${r._flag === 'warn' ? '<div class="pms-flag-badge">⚠ check size</div>' : ''}<input class="pms-cell-input" data-field="pipingClass" value="${escapeAttr(r.pipingClass || '')}"></td>
+            <td><input class="pms-cell-input" data-field="sizeFrom" value="${escapeAttr(r.sizeFrom || '')}" style="width:4.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="sizeTo" value="${escapeAttr(r.sizeTo || '')}" style="width:4.5rem;"></td>
+            <td><input class="pms-cell-input pms-desc" data-field="materialSpec" value="${escapeAttr(r.materialSpec || '')}"></td>
+            <td><input class="pms-cell-input" data-field="jointTypeE" value="${escapeAttr(r.jointTypeE || '')}" placeholder="?" style="width:3.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="w" value="${escapeAttr(r.w || '')}" style="width:3.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="corrAllow" value="${escapeAttr(r.corrAllow || '')}" style="width:4.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="mechAllow" value="${escapeAttr(r.mechAllow || '')}" style="width:4.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="millUndertol" value="${escapeAttr(r.millUndertol || '')}" style="width:4.5rem;"></td>
+            <td><input class="pms-cell-input" data-field="schedule" value="${escapeAttr(r.schedule || '')}" style="width:5rem;"></td>
+            <td><input class="pms-cell-input pms-desc" data-field="remarks" value="${escapeAttr(r.remarks || '')}"></td>
+            <td><button type="button" class="pms-row-delete-btn" title="Remove row">&times;</button></td>
+        </tr>`;
+
+        const renderPmsReviewTable = (rows) => {
+            pmsReviewTbody.innerHTML = rows.map(pmsRowHtml).join('');
+        };
+
+        const blankPmsRow = () => ({ pipingClass: '', sizeFrom: '', sizeTo: '', materialSpec: '', jointTypeE: '', w: '1.00', corrAllow: '', mechAllow: '', millUndertol: '', schedule: '', remarks: '', _flag: 'ok' });
+
+        pmsReviewTbody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.pms-row-delete-btn');
+            if (btn) btn.closest('tr').remove();
+        });
+
+        pmsAddRowBtn.addEventListener('click', () => {
+            pmsReviewEmpty.classList.add('hidden');
+            pmsReviewWrap.classList.remove('hidden');
+            pmsReviewTbody.insertAdjacentHTML('beforeend', pmsRowHtml(blankPmsRow()));
+        });
+
+        const readPmsTableRows = () => Array.from(pmsReviewTbody.querySelectorAll('tr')).map(tr => {
+            const obj = {};
+            PMS_FIELDS.forEach(f => {
+                const input = tr.querySelector(`[data-field="${f}"]`);
+                obj[f] = input ? input.value.trim() : '';
+            });
+            return obj;
+        });
+
+        // ============================================================
+        //  PMS IMPORT — file uploads
+        // ============================================================
+        pmsSourceInput.addEventListener('change', async (e) => {
+            if (!e.target.files || !e.target.files.length) return;
+            const file = e.target.files[0];
+            pmsSourceName.textContent = file.name;
+            pmsSourceName.title = file.name;
+            try {
+                pmsSourceWorkbook = await readWorkbookFile(file);
+                pmsParseBtn.disabled = false;
+            } catch (err) {
+                pmsSourceWorkbook = null;
+                pmsParseBtn.disabled = true;
+                showMessage(`Error reading ${file.name}: ${err.message}`, 'error');
+            }
+        });
+
+        pmsTemplateInput.addEventListener('change', async (e) => {
+            if (!e.target.files || !e.target.files.length) return;
+            const file = e.target.files[0];
+            pmsTemplateName.textContent = file.name;
+            pmsTemplateName.title = file.name;
+            try {
+                pmsTemplateWorkbook = await readWorkbookFile(file);
+                const ws = pmsTemplateWorkbook.Sheets['PMS'] || pmsTemplateWorkbook.Sheets[pmsTemplateWorkbook.SheetNames[0]];
+                const grid = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                if (grid.length > 0 && grid[0].length > 0) {
+                    pmsTemplateHeaderArray = grid[0].map(h => String(h).trim());
+                }
+            } catch (err) {
+                pmsTemplateWorkbook = null;
+                showMessage(`Error reading ${file.name}: ${err.message}`, 'error');
+            }
+        });
+
+        // ============================================================
+        //  PMS IMPORT — parse button
+        // ============================================================
+        pmsParseBtn.addEventListener('click', () => {
+            if (!pmsSourceWorkbook) return;
+            hideMessage();
+            const { rows, warnings } = parsePmsWorkbook(pmsSourceWorkbook);
+
+            pmsParseSummary.classList.remove('hidden');
+            pmsParseSummary.innerHTML = `Parsed <strong>${rows.length}</strong> PIPE size-range row(s) across <strong>${pmsSourceWorkbook.SheetNames.length}</strong> sheet(s). Review and edit every row below before exporting — especially <strong>Joint Type E</strong>, which is always left blank.`;
+
+            if (warnings.length > 0) {
+                pmsWarningsEl.classList.remove('hidden');
+                pmsWarningsEl.innerHTML = `<strong>${warnings.length} item(s) need your attention:</strong><br>` + warnings.map(w => `• ${escapeAttr(w)}`).join('<br>');
+            } else {
+                pmsWarningsEl.classList.add('hidden');
+            }
+
+            if (rows.length === 0) {
+                pmsReviewEmpty.classList.remove('hidden');
+                pmsReviewEmpty.textContent = 'No PIPE rows were found. Check the warnings above, or use "+ Add Row" to enter data manually.';
+                pmsReviewWrap.classList.add('hidden');
+            } else {
+                pmsReviewEmpty.classList.add('hidden');
+                pmsReviewWrap.classList.remove('hidden');
+                renderPmsReviewTable(rows);
+            }
+            pmsAddRowBtn.classList.remove('hidden');
+            pmsExportBtn.classList.remove('hidden');
+        });
+
+        // ============================================================
+        //  PMS IMPORT — export
+        // ============================================================
+        pmsExportBtn.addEventListener('click', () => {
+            const rows = readPmsTableRows();
+
+            if (rows.length === 0) {
+                showMessage('There are no rows to export.', 'error');
+                return;
+            }
+
+            // Validate required fields — including Joint Type E, which must always be
+            // filled in by hand. Nothing is exported until every row is complete.
+            let hasError = false;
+            pmsReviewTbody.querySelectorAll('tr').forEach(tr => {
+                PMS_REQUIRED.forEach(f => {
+                    const input = tr.querySelector(`[data-field="${f}"]`);
+                    if (input) {
+                        const empty = input.value.trim() === '';
+                        input.classList.toggle('pms-required-empty', empty);
+                        if (empty) hasError = true;
+                    }
+                });
+            });
+
+            if (hasError) {
+                showMessage('Please fill in all required fields highlighted in red — especially Joint Type E — before exporting.', 'error');
+                return;
+            }
+
+            const headerArray = pmsTemplateHeaderArray;
+            const newRowObjects = rows.map(r => ({
+                [headerArray[0]]: r.pipingClass,
+                [headerArray[1]]: r.sizeFrom,
+                [headerArray[2]]: r.sizeTo,
+                [headerArray[3]]: r.materialSpec,
+                [headerArray[4]]: r.jointTypeE,
+                [headerArray[5]]: r.w,
+                [headerArray[6]]: r.corrAllow,
+                [headerArray[7]]: r.mechAllow,
+                [headerArray[8]]: r.millUndertol,
+                [headerArray[9]]: r.schedule,
+                [headerArray[10]]: r.remarks
+            }));
+
+            let wbOut = XLSX.utils.book_new();
+            if (pmsTemplateWorkbook) {
+                const existingWs = pmsTemplateWorkbook.Sheets['PMS'] || pmsTemplateWorkbook.Sheets[pmsTemplateWorkbook.SheetNames[0]];
+                const existingRows = XLSX.utils.sheet_to_json(existingWs, { defval: '', raw: false });
+                const combined = existingRows.concat(newRowObjects);
+                const newWs = XLSX.utils.json_to_sheet(combined, { header: headerArray });
+                XLSX.utils.book_append_sheet(wbOut, newWs, 'PMS');
+                if (pmsTemplateWorkbook.Sheets['Instructions']) {
+                    XLSX.utils.book_append_sheet(wbOut, pmsTemplateWorkbook.Sheets['Instructions'], 'Instructions');
+                }
+            } else {
+                const newWs = XLSX.utils.json_to_sheet(newRowObjects, { header: headerArray });
+                XLSX.utils.book_append_sheet(wbOut, newWs, 'PMS');
+            }
+
+            const out = XLSX.write(wbOut, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([out], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mechtoolkit_pms_template_updated.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+            showMessage(`✅ Exported ${newRowObjects.length} new row(s) to the PMS template.`, 'success');
+        });
+
         // Initialize
         updateCleanBadge();
         hardReset();
     </script>
- <script>
-const KEY_URL = "https://raw.githubusercontent.com/ahmadr59-ops/license-control/main/key.txt";
-
-let userKey = prompt("Enter Access Key:");
-
-fetch(KEY_URL)
-  .then(res => res.text())
-  .then(key => {
-    key = key.trim();
-
-    if (userKey !== key) {
-      document.body.innerHTML = "<h1>Access Denied</h1>";
-    }
-  })
-  .catch(() => {
-    document.body.innerHTML = "<h1>License Check Failed</h1>";
-  });
-</script>
 </body>
 </html>
