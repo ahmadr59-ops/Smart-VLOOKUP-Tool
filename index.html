@@ -570,6 +570,19 @@
             margin-bottom: 0.2rem;
         }
 
+        /* FIX: clear (×) button for uploaded files, letting the person swap a file
+           without needing to reset the whole form */
+        .file-upload-wrap { position: relative; }
+        .file-clear-btn {
+            position: absolute; top: 0.35rem; right: 0.35rem; display: none;
+            width: 1.3rem; height: 1.3rem; border-radius: 9999px;
+            background: rgba(0,0,0,0.07); color: var(--text-muted); border: none;
+            align-items: center; justify-content: center;
+            font-size: 0.85rem; line-height: 1; cursor: pointer; transition: all 0.15s;
+        }
+        .file-clear-btn.visible { display: flex; }
+        .file-clear-btn:hover { background: #fee2e2; color: #dc2626; }
+
         /* ── Clean data badge on process button ── */
         #clean-active-badge {
             display: none; font-size: 0.6rem; background: rgba(255,255,255,0.2);
@@ -671,9 +684,12 @@
                                 <div>
                                     <label id="file1-label" class="block text-sm font-medium text-gray-700 mb-1">Source File (Destination)</label>
                                     <!-- FIX #3: Shows sheet selector if needed -->
-                                    <label for="file1" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                        <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file1-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
-                                    </label>
+                                    <div class="file-upload-wrap">
+                                        <label for="file1" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                            <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file1-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
+                                        </label>
+                                        <button type="button" id="file1-clear-btn" class="file-clear-btn" title="Remove file">&times;</button>
+                                    </div>
                                     <input id="file1" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file1-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
                                     <button id="preview-btn-1" class="preview-btn" data-file="1">
@@ -682,9 +698,12 @@
                                 </div>
                                 <div>
                                     <label id="file2-label" class="block text-sm font-medium text-gray-700 mb-1">Lookup File (Source)</label>
-                                    <label for="file2" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                        <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file2-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
-                                    </label>
+                                    <div class="file-upload-wrap">
+                                        <label for="file2" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                            <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="file2-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload</span></div>
+                                        </label>
+                                        <button type="button" id="file2-clear-btn" class="file-clear-btn" title="Remove file">&times;</button>
+                                    </div>
                                     <input id="file2" type="file" class="hidden" accept=".xlsx, .xls, .csv">
                                     <p id="file2-sheet-info" class="text-xs text-indigo-600 mt-1 hidden"></p>
                                     <button id="preview-btn-2" class="preview-btn" data-file="2">
@@ -861,27 +880,41 @@
 
                 <!-- Left: import setup -->
                 <div style="background:var(--surface); border:1px solid var(--border-soft); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); padding:1.1rem;">
-                    <div class="flex items-center gap-2.5" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft); margin-bottom:0.9rem;">
-                        <span class="step-badge">1</span>
-                        <h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Import Setup</h3>
-                        <div class="info-popover-wrap">
-                            <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
-                            <div class="info-popover">Parses a Line Class Sheet (PMS.xls) and extracts PIPE rows only, one row per size range. Nothing is written until you review and confirm on the right — safety-relevant fields like Joint Type E are always left blank for you to fill in.</div>
+                    <div class="flex items-center justify-between gap-3" style="padding-bottom:0.6rem; border-bottom:1px solid var(--border-soft); margin-bottom:0.9rem;">
+                        <div class="flex items-center gap-2.5">
+                            <span class="step-badge">1</span>
+                            <h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Import Setup</h3>
+                            <div class="info-popover-wrap">
+                                <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
+                                <div class="info-popover">Parses a Line Class Sheet (PMS.xls) and extracts PIPE rows only, one row per size range. Nothing is written until you review and confirm on the right — safety-relevant fields like Joint Type E are always left blank for you to fill in.</div>
+                            </div>
                         </div>
+                        <button id="pms-reset-btn" title="Reset Import PMS section only" class="flex items-center gap-1.5 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all" style="color:var(--text-secondary); background:var(--surface-alt);">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0 1 14.23-5.77M20 15a9 9 0 0 1-14.23 5.77" />
+                            </svg>
+                            Reset
+                        </button>
                     </div>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Source: Line Class Sheet</label>
-                            <label for="pms-source-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-source-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload PMS.xls</span></div>
-                            </label>
+                            <div class="file-upload-wrap">
+                                <label for="pms-source-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                    <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-source-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload PMS.xls</span></div>
+                                </label>
+                                <button type="button" id="pms-source-clear-btn" class="file-clear-btn" title="Remove file">&times;</button>
+                            </div>
                             <input id="pms-source-file" type="file" class="hidden" accept=".xlsx,.xls,.xlsm">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Destination: PMS Template <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
-                            <label for="pms-template-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
-                                <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-template-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload template (or skip)</span></div>
-                            </label>
+                            <div class="file-upload-wrap">
+                                <label for="pms-template-file" class="file-input-label flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors">
+                                    <div class="flex items-center gap-2" style="min-width:0; width:100%; justify-content:center;"><svg class="h-6 w-6 text-gray-400" style="flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" /></svg><span id="pms-template-name" class="block text-sm text-gray-600" style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="Upload">Upload template (or skip)</span></div>
+                                </label>
+                                <button type="button" id="pms-template-clear-btn" class="file-clear-btn" title="Remove file">&times;</button>
+                            </div>
                             <input id="pms-template-file" type="file" class="hidden" accept=".xlsx">
                             <p class="text-xs mt-1" style="color:var(--text-muted);">If you skip this, a fresh template with the standard 11-column header will be created for you.</p>
                         </div>
@@ -900,7 +933,7 @@
                             <h3 class="font-semibold" style="font-size:1rem; color:var(--text-primary);">Review Before Export</h3>
                             <div class="info-popover-wrap">
                                 <button type="button" class="info-icon" data-info-toggle aria-label="What is this?">i</button>
-                                <div class="info-popover">Every extracted row is editable. Fields shaded red are required and must be filled before exporting — in particular <strong>Joint Type E</strong>, which this tool never guesses.</div>
+                                <div class="info-popover">Every extracted row is editable. Fields shaded red are missing — you can still export with them blank and complete them later, but they should be filled in before this data is used in a calculation. <strong>Joint Type E</strong> is never guessed by this tool.</div>
                             </div>
                         </div>
                         <button id="pms-add-row-btn" class="hidden flex items-center gap-1 px-3 py-1.5 border border-transparent text-sm font-medium rounded-md transition-all" style="color:var(--text-secondary); background:var(--surface-alt);">+ Add Row</button>
@@ -947,6 +980,8 @@
         const file2Input          = document.getElementById('file2');
         const file1NameEl         = document.getElementById('file1-name');
         const file2NameEl         = document.getElementById('file2-name');
+        const file1ClearBtn       = document.getElementById('file1-clear-btn');
+        const file2ClearBtn       = document.getElementById('file2-clear-btn');
         const file1SheetInfo      = document.getElementById('file1-sheet-info');
         const file2SheetInfo      = document.getElementById('file2-sheet-info');
         const keyColumnList       = document.getElementById('key-column-list'); // FIX: replaces single-select common-column
@@ -1595,6 +1630,8 @@
             file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
             file1SheetInfo.classList.add('hidden');
             file2SheetInfo.classList.add('hidden');
+            file1ClearBtn.classList.remove('visible');
+            file2ClearBtn.classList.remove('visible');
             keyColumns = [];
             resetDownloadButton();
             resetStateHistory();
@@ -2120,6 +2157,7 @@
                     file1SheetInfo.classList.add('hidden');
                 }
                 refreshPreviewButtons();
+                file1ClearBtn.classList.add('visible'); // FIX: reveal clear (×) button once a file is loaded
                 if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
                 else renderAll();
             } catch (err) {
@@ -2134,6 +2172,34 @@
                 file1SheetInfo.classList.add('hidden');
                 refreshPreviewButtons();
             }
+        });
+
+        // FIX: clear (×) button — removes the file and its derived state without
+        // requiring a full form reset, so a new file can be picked in its place.
+        const clearFile1 = () => {
+            file1Input.value = '';
+            file1NameEl.textContent = 'Upload';
+            file1NameEl.title = 'Upload';
+            file1NameEl.classList.remove('text-indigo-700', 'font-semibold');
+            file1SheetInfo.classList.add('hidden');
+            file1ClearBtn.classList.remove('visible');
+            file1Data = [];
+            file1Headers = [];
+            originalFile1Headers = [];
+            mappings = [];
+            keyColumns = [];
+            resetDownloadButton();
+            resetStateHistory();
+            refreshPreviewButtons();
+            renderKeyColumnList();
+            updateCreateKeyPrompt();
+            renderAll();
+            hideMessage();
+        };
+        file1ClearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearFile1();
         });
 
         file2Input.addEventListener('change', async (e) => {
@@ -2158,6 +2224,7 @@
                     file2SheetInfo.classList.add('hidden');
                 }
                 refreshPreviewButtons();
+                file2ClearBtn.classList.add('visible'); // FIX: reveal clear (×) button once a file is loaded
                 if (file1Data.length > 0 && file2Data.length > 0) softResetWorkspace();
                 else renderAll();
             } catch (err) {
@@ -2171,6 +2238,33 @@
                 file2SheetInfo.classList.add('hidden');
                 refreshPreviewButtons();
             }
+        });
+
+        // FIX: clear (×) button for file2, mirroring clearFile1
+        const clearFile2 = () => {
+            file2Input.value = '';
+            file2NameEl.textContent = 'Upload';
+            file2NameEl.title = 'Upload';
+            file2NameEl.classList.remove('text-indigo-700', 'font-semibold');
+            file2SheetInfo.classList.add('hidden');
+            file2ClearBtn.classList.remove('visible');
+            file2Data = [];
+            file2Headers = [];
+            originalFile2Headers = [];
+            mappings = [];
+            keyColumns = [];
+            resetDownloadButton();
+            resetStateHistory();
+            refreshPreviewButtons();
+            renderKeyColumnList();
+            updateCreateKeyPrompt();
+            renderAll();
+            hideMessage();
+        };
+        file2ClearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearFile2();
         });
 
         // FIX: composite key chip toggling (click to add/remove a column from the key).
@@ -2336,7 +2430,10 @@
         const pmsTemplateInput  = document.getElementById('pms-template-file');
         const pmsSourceName     = document.getElementById('pms-source-name');
         const pmsTemplateName   = document.getElementById('pms-template-name');
+        const pmsSourceClearBtn   = document.getElementById('pms-source-clear-btn');
+        const pmsTemplateClearBtn = document.getElementById('pms-template-clear-btn');
         const pmsParseBtn       = document.getElementById('pms-parse-btn');
+        const pmsResetBtn       = document.getElementById('pms-reset-btn');
         const pmsParseSummary   = document.getElementById('pms-parse-summary');
         const pmsReviewEmpty    = document.getElementById('pms-review-empty');
         const pmsReviewWrap     = document.getElementById('pms-review-wrap');
@@ -2350,7 +2447,8 @@
         // Default header — used only if no destination template is uploaded.
         // If a template IS uploaded, its own header row (read from the file) is used instead,
         // so any customization the user made to their template is respected.
-        let pmsTemplateHeaderArray = ["Piping Class", "Size From (NPS)", "Size To (NPS)", "Material Spec/Grade", "Joint Type E", "W", "Corrosion Allowance (mm)", "Mechanical Allowance (mm)", "Mill Undertolerance (%)", "Schedule/Rating (ref.)", "Remarks"];
+        const PMS_DEFAULT_HEADER = ["Piping Class", "Size From (NPS)", "Size To (NPS)", "Material Spec/Grade", "Joint Type E", "W", "Corrosion Allowance (mm)", "Mechanical Allowance (mm)", "Mill Undertolerance (%)", "Schedule/Rating (ref.)", "Remarks"];
+        let pmsTemplateHeaderArray = [...PMS_DEFAULT_HEADER];
 
         const PMS_FIELDS   = ['pipingClass', 'sizeFrom', 'sizeTo', 'materialSpec', 'jointTypeE', 'w', 'corrAllow', 'mechAllow', 'millUndertol', 'schedule', 'remarks'];
         const PMS_REQUIRED = ['pipingClass', 'sizeFrom', 'sizeTo', 'materialSpec', 'jointTypeE'];
@@ -2534,7 +2632,7 @@
                             sizeTo: sizeToParsed !== null ? String(sizeToParsed) : toRaw,
                             materialSpec: description,
                             jointTypeE: '', // FIX: never guessed — always left blank for manual engineering entry
-                            w: '1.00',      // stated in the template's own instructions as the usual default; editable
+                            w: '',      // FIX: never assume a default — if the source didn't state W, leave it blank (flagged), not silently filled with 1.00
                             corrAllow: corrAllow,
                             mechAllow: '',
                             millUndertol: '',
@@ -2571,7 +2669,7 @@
             pmsReviewTbody.innerHTML = rows.map(pmsRowHtml).join('');
         };
 
-        const blankPmsRow = () => ({ pipingClass: '', sizeFrom: '', sizeTo: '', materialSpec: '', jointTypeE: '', w: '1.00', corrAllow: '', mechAllow: '', millUndertol: '', schedule: '', remarks: '', _flag: 'ok' });
+        const blankPmsRow = () => ({ pipingClass: '', sizeFrom: '', sizeTo: '', materialSpec: '', jointTypeE: '', w: '', corrAllow: '', mechAllow: '', millUndertol: '', schedule: '', remarks: '', _flag: 'ok' });
 
         pmsReviewTbody.addEventListener('click', (e) => {
             const btn = e.target.closest('.pms-row-delete-btn');
@@ -2582,6 +2680,7 @@
             pmsReviewEmpty.classList.add('hidden');
             pmsReviewWrap.classList.remove('hidden');
             pmsReviewTbody.insertAdjacentHTML('beforeend', pmsRowHtml(blankPmsRow()));
+            updatePmsRequiredHighlighting();
         });
 
         const readPmsTableRows = () => Array.from(pmsReviewTbody.querySelectorAll('tr')).map(tr => {
@@ -2604,11 +2703,25 @@
             try {
                 pmsSourceWorkbook = await readWorkbookFile(file);
                 pmsParseBtn.disabled = false;
+                pmsSourceClearBtn.classList.add('visible');
             } catch (err) {
                 pmsSourceWorkbook = null;
                 pmsParseBtn.disabled = true;
                 showMessage(`Error reading ${file.name}: ${err.message}`, 'error');
             }
+        });
+
+        // FIX: clear (×) button — lets the person swap the source file without
+        // needing to reset the whole Import PMS panel
+        pmsSourceClearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            pmsSourceInput.value = '';
+            pmsSourceName.textContent = 'Upload PMS.xls';
+            pmsSourceName.title = 'Upload';
+            pmsSourceClearBtn.classList.remove('visible');
+            pmsSourceWorkbook = null;
+            pmsParseBtn.disabled = true;
         });
 
         pmsTemplateInput.addEventListener('change', async (e) => {
@@ -2623,10 +2736,24 @@
                 if (grid.length > 0 && grid[0].length > 0) {
                     pmsTemplateHeaderArray = grid[0].map(h => String(h).trim());
                 }
+                pmsTemplateClearBtn.classList.add('visible');
             } catch (err) {
                 pmsTemplateWorkbook = null;
                 showMessage(`Error reading ${file.name}: ${err.message}`, 'error');
             }
+        });
+
+        // FIX: clear (×) button for the optional template upload — reverts to the
+        // default 11-column header once removed
+        pmsTemplateClearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            pmsTemplateInput.value = '';
+            pmsTemplateName.textContent = 'Upload template (or skip)';
+            pmsTemplateName.title = 'Upload';
+            pmsTemplateClearBtn.classList.remove('visible');
+            pmsTemplateWorkbook = null;
+            pmsTemplateHeaderArray = [...PMS_DEFAULT_HEADER];
         });
 
         // ============================================================
@@ -2655,6 +2782,7 @@
                 pmsReviewEmpty.classList.add('hidden');
                 pmsReviewWrap.classList.remove('hidden');
                 renderPmsReviewTable(rows);
+                updatePmsRequiredHighlighting();
             }
             pmsAddRowBtn.classList.remove('hidden');
             pmsExportBtn.classList.remove('hidden');
@@ -2663,6 +2791,24 @@
         // ============================================================
         //  PMS IMPORT — export
         // ============================================================
+        // FIX: highlight missing required fields (still red, still visible) but never
+        // block export on them — the engineer may legitimately not have that data yet
+        // (e.g. the source sheet simply didn't state W) and should be able to export
+        // now and complete the row later, rather than being stuck unable to produce a file.
+        const updatePmsRequiredHighlighting = () => {
+            pmsReviewTbody.querySelectorAll('tr').forEach(tr => {
+                PMS_REQUIRED.forEach(f => {
+                    const input = tr.querySelector(`[data-field="${f}"]`);
+                    if (input) input.classList.toggle('pms-required-empty', input.value.trim() === '');
+                });
+            });
+        };
+        pmsReviewTbody.addEventListener('input', (e) => {
+            if (e.target.matches('.pms-cell-input')) {
+                e.target.classList.toggle('pms-required-empty', PMS_REQUIRED.includes(e.target.dataset.field) && e.target.value.trim() === '');
+            }
+        });
+
         pmsExportBtn.addEventListener('click', () => {
             const rows = readPmsTableRows();
 
@@ -2671,24 +2817,11 @@
                 return;
             }
 
-            // Validate required fields — including Joint Type E, which must always be
-            // filled in by hand. Nothing is exported until every row is complete.
-            let hasError = false;
-            pmsReviewTbody.querySelectorAll('tr').forEach(tr => {
-                PMS_REQUIRED.forEach(f => {
-                    const input = tr.querySelector(`[data-field="${f}"]`);
-                    if (input) {
-                        const empty = input.value.trim() === '';
-                        input.classList.toggle('pms-required-empty', empty);
-                        if (empty) hasError = true;
-                    }
-                });
-            });
-
-            if (hasError) {
-                showMessage('Please fill in all required fields highlighted in red — especially Joint Type E — before exporting.', 'error');
-                return;
-            }
+            // Count (but don't block on) incomplete required fields, so the person
+            // exporting knows what's left to fill in later.
+            updatePmsRequiredHighlighting();
+            let incompleteCount = 0;
+            pmsReviewTbody.querySelectorAll('.pms-required-empty').forEach(() => incompleteCount++);
 
             const headerArray = pmsTemplateHeaderArray;
             const newRowObjects = rows.map(r => ({
@@ -2731,8 +2864,46 @@
             document.body.removeChild(a);
             setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-            showMessage(`✅ Exported ${newRowObjects.length} new row(s) to the PMS template.`, 'success');
+            const incompleteNote = incompleteCount > 0
+                ? ` ${incompleteCount} field(s) are still blank (highlighted in red) — you can complete them later and re-export.`
+                : '';
+            showMessage(`✅ Exported ${newRowObjects.length} new row(s) to the PMS template.${incompleteNote}`, 'success');
         });
+
+        // ============================================================
+        //  PMS IMPORT — reset (scoped to this section only, does not
+        //  touch the VLOOKUP Tool's files or state)
+        // ============================================================
+        const resetPmsImport = () => {
+            pmsSourceInput.value = '';
+            pmsSourceName.textContent = 'Upload PMS.xls';
+            pmsSourceName.title = 'Upload';
+            pmsSourceClearBtn.classList.remove('visible');
+            pmsSourceWorkbook = null;
+
+            pmsTemplateInput.value = '';
+            pmsTemplateName.textContent = 'Upload template (or skip)';
+            pmsTemplateName.title = 'Upload';
+            pmsTemplateClearBtn.classList.remove('visible');
+            pmsTemplateWorkbook = null;
+            pmsTemplateHeaderArray = [...PMS_DEFAULT_HEADER];
+
+            pmsParseBtn.disabled = true;
+            pmsParseSummary.classList.add('hidden');
+            pmsParseSummary.innerHTML = '';
+            pmsWarningsEl.classList.add('hidden');
+            pmsWarningsEl.innerHTML = '';
+
+            pmsReviewTbody.innerHTML = '';
+            pmsReviewWrap.classList.add('hidden');
+            pmsReviewEmpty.classList.remove('hidden');
+            pmsReviewEmpty.textContent = 'Upload a Line Class Sheet on the left and click "Parse" to see extracted rows here.';
+            pmsAddRowBtn.classList.add('hidden');
+            pmsExportBtn.classList.add('hidden');
+
+            hideMessage();
+        };
+        pmsResetBtn.addEventListener('click', resetPmsImport);
 
         // Initialize
         updateCleanBadge();
